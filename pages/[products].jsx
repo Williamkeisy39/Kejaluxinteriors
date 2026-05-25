@@ -33,7 +33,7 @@ import {
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router'
 import { CaretRight, FunnelSimple } from 'phosphor-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { connect, useSelector } from 'react-redux'
 import Link from 'next/link'
 import { ToastContainer } from 'react-toastify'
@@ -170,7 +170,7 @@ const FilterDrawer = ({ isOpen, onClose, btnRef, cat, page, fetchProducts, filte
                                 Price (KSh)
                             </Text>
 
-                            <RangeSlider aria-label={['min', 'max']}
+                            <RangeSlider aria-label={'Price range'}
                                 defaultValue={[100000, 250000]}
                                 marginTop={2}
                                 onChange={(val) => setPriceRange(val)}
@@ -243,14 +243,14 @@ const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
         = useSelector((state) => state.products)
     const safeData = data || {}
 
-    const fetchProducts = (category, prevData, nextPage) => {
+    const fetchProducts = useCallback((category, prevData, nextPage) => {
         getProducts(category, prevData, nextPage)
-    }
+    }, [getProducts])
 
     useEffect(() => {
         if (!router.isReady || !path) return
         fetchProducts(path, {}, 1)
-    }, [path, router.isReady])
+    }, [fetchProducts, path, router.isReady])
 
     if (error) {
         return (

@@ -12,7 +12,7 @@ const ViewOrders = ({ getAllOrders, updateOrder }) => {
 
     useEffect(() => {
         getAllOrders()
-    }, [])
+    }, [getAllOrders])
 
     return (
         <Flex

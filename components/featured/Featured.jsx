@@ -2,7 +2,7 @@ import { Badge, Box, Button, Circle, Flex, Grid, Skeleton, Tab, TabList, TabPane
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { connect, useSelector } from 'react-redux'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.min.css'
@@ -229,18 +229,18 @@ const Featured = ({ getAllProducts, getProducts }) => {
 
     const productState = useSelector((state) => state.products)
 
-    const fetchCategory = (index) => {
+    const fetchCategory = useCallback((index) => {
         if (index === 0) {
             getAllProducts()
             return
         }
         const category = categories[index]?.toLowerCase()
         if (category) getProducts(category, {}, 1)
-    }
+    }, [getAllProducts, getProducts])
 
     useEffect(() => {
         fetchCategory(0)
-    }, [])
+    }, [fetchCategory])
 
     return (
         <Flex

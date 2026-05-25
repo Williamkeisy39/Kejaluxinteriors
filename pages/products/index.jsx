@@ -36,7 +36,7 @@ import {
     VStack,
 } from '@chakra-ui/react';
 import { MagnifyingGlass, CaretRight, FunnelSimple, X } from 'phosphor-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { connect, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { ToastContainer } from 'react-toastify';
@@ -178,7 +178,7 @@ const FilterDrawer = ({ isOpen, onClose, btnRef, cat, page, fetchProducts, filte
                                 Price (KSh)
                             </Text>
 
-                            <RangeSlider aria-label={['min', 'max']}
+                            <RangeSlider aria-label={'Price range'}
                                 defaultValue={[100000, 250000]}
                                 marginTop={2}
                                 onChange={(val) => setPriceRange(val)}
@@ -259,9 +259,13 @@ const AllProducts = ({ getAllProducts, getProductsByColor, getProductsByPrice })
         = useSelector((state) => state.products);
     const safeData = data || {};
 
-    useEffect(() => {
+    const loadAllProducts = useCallback(() => {
         getAllProducts(1, {});
-    }, []);
+    }, [getAllProducts]);
+
+    useEffect(() => {
+        loadAllProducts();
+    }, [loadAllProducts]);
 
     const clearSearch = () => {
         setSearchTerm('');

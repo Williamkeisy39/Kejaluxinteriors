@@ -18,7 +18,7 @@ const SuccessPage = () => {
             router.replace('/signup')
             return
         }
-    }, [hasNotAuth])
+    }, [hasNotAuth, router])
 
     if (hasNotAuth) return null // don't render any UI since auth state has not been verified
 
@@ -36,7 +36,8 @@ const SuccessPage = () => {
             <Confetti />
 
             <Image
-                src={success} />
+                src={success}
+                alt={'Order success'} />
 
             <Text
                 fontSize={'4xl'}

@@ -1,4 +1,4 @@
-import { Box, Button, color, Divider, Flex, IconButton, Input, Stack, Text, useDisclosure, VStack } from '@chakra-ui/react'
+import { Box, Button, color, Divider, Flex, HStack, IconButton, Input, Stack, Text, useDisclosure, VStack } from '@chakra-ui/react'
 import { useEffect } from 'react'
 import { useState } from 'react'
 import { connect, useDispatch, useSelector } from 'react-redux'
