@@ -8,7 +8,8 @@ const config = {
 export const theme = extendTheme({
     config,
     fonts: {
-        body: `'Plus Jakarta Sans', sans-serif`,
+        heading: `'Clash Grotesk', 'Satoshi', sans-serif`,
+        body: `'Millard', 'Satoshi', sans-serif`,
     },
     colors: {
         gold: {

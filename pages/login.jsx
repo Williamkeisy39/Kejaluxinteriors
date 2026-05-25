@@ -1,16 +1,16 @@
-import { Button, Flex, IconButton, Input, InputGroup, InputRightElement, Text, VStack } from '@chakra-ui/react'
+import { Button, Divider, Flex, HStack, IconButton, Input, InputGroup, InputRightElement, Text, VStack } from '@chakra-ui/react'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { Eye, EyeClosed } from 'phosphor-react'
 import { useState } from 'react'
-import { FcGoogle } from 'react-icons/fc'
-import { useFirebase } from 'react-redux-firebase'
+import { useDispatch } from 'react-redux'
 
 import { motion } from 'framer-motion'
 
 import armchair from '../public/armchair.png'
 import { LoginValidation } from '../utils/validate'
 import Meta from '../components/meta/Meta'
+import { loginUser } from '../store/authReducer'
 
 const imagePaneVariant = {
     fromTop: {
@@ -42,7 +42,7 @@ const Login = () => {
     })
     const [errors, setErrors] = useState({})
     const router = useRouter()
-    const firebase = useFirebase()
+    const dispatch = useDispatch()
 
     const handleShowClick = () => setShow(prev => !prev)
     const handleFormChange = (e) => {
@@ -55,26 +55,15 @@ const Login = () => {
         setErrors({})
         setLoading(true)
 
-        firebase.login({ email, password }).then((result) => {
-            setLoading(false)
-            router.push('/')
-        }).catch(err => {
-            setAuthErr(err.message)
-        })
-    }
-
-    const signInWithGoogle = () => {
-        setAuthErr('')
-        setErrors({})
-
-        firebase.login({
-            provider: 'google',
-            type: 'popup'
-        }).then((result) => {
-            router.push('/')
-        }).catch(err => {
-            setAuthErr(err.message)
-        })
+        dispatch(loginUser(email, password))
+            .then(() => {
+                setLoading(false)
+                router.push('/')
+            })
+            .catch(err => {
+                setLoading(false)
+                setAuthErr(err.message)
+            })
     }
 
     return (
@@ -88,7 +77,7 @@ const Login = () => {
                 h={'100vh'}
                 bgColor={'gold.500'}
                 display={{base: 'none', lg: 'flex'}}>
-                <Meta title={'Login | Fobath Woodwork'} />
+                <Meta title={'Login | Kejalux Interiors'} />
 
                 <Flex
                     as={motion.div}
@@ -146,6 +135,15 @@ const Login = () => {
                         textColor={'black'}>
                         Sign in
                     </Text>
+
+                    {authErr && <Text
+                        textColor={'red.500'}
+                        fontWeight={'light'}
+                        fontSize={'sm'}
+                        textAlign={'center'}
+                        mt={2}>
+                        {authErr}
+                    </Text>}
 
                     <VStack
                         width={'full'}
@@ -245,31 +243,6 @@ const Login = () => {
 
                     <Text
                         fontWeight={'normal'}
-                        fontSize={'sm'}
-                        marginY={4}
-                        textColor={'black'}
-                        textTransform={'lowercase'}>
-                        or sign in with
-                    </Text>
-
-                    <Button
-                        bgColor={'blackAlpha.200'}
-                        borderWidth={'0'}
-                        shadow={'sm'}
-                        color={'black'}
-                        width={'full'}
-                        paddingY={5}
-                        leftIcon={<FcGoogle weight={'duotone'} size={20} />}
-                        _hover={{ color: 'black' }}
-                        _focus={{
-                            boxShadow: '0 0 1px 4px hsla(221, 83%, 53%, 0.3)'
-                        }}
-                        onClick={signInWithGoogle}>
-                        Google
-                    </Button>
-
-                    <Text
-                        fontWeight={'normal'}
                         fontSize={'xs'}
                         marginY={2}
                         textColor={'black'}>
@@ -288,6 +261,7 @@ const Login = () => {
                 </Flex>
 
             </Flex>
+
         </Flex >
     )
 }

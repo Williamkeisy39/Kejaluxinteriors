@@ -3,17 +3,11 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   env: {
-    apiKey: process.env.NEXT_APP_FIREBASE_APIKEY,
-    authDomain: process.env.NEXT_APP_FIREBASE_AUTHDOMAIN,
-    projectID: process.env.NEXT_APP_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_APP_FIREBASE_STORAGE_BUCKET,
-    messagingSenderID: process.env.NEXT_APP_FIREBASE_MESSAGING_SENDER_ID,
-    appID: process.env.NEXT_APP_FIREBASE_APP_ID,
-    measurementID: process.env.NEXT_APP_FIREBASE_MEASUREMENT_ID,
-    paystackPublicKey: process.env.NEXT_APP_PAYSTACK_PUBLIC_KEY
+    NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || process.env.NEXT_APP_PAYSTACK_PUBLIC_KEY || 'pk_live_7b06579b36d563071a5f0bfa266b79be10695eff',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
   },
   images: {
-    domains: ['firebasestorage.googleapis.com']
+    domains: ['localhost']
   }
 }
 

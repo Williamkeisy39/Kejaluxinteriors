@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { doc, getDoc } from "firebase/firestore";
+import { apiGetProduct } from "../utils/api";
 
 const dataState = {
     isLoading: true,
@@ -24,29 +24,26 @@ export const { fetchProduct } = productSlice.actions
 export default productSlice.reducer
 
 export const getProduct = (productId) => {
-    return async (dispatch, getState, { getFirebase }) => {
+    return async (dispatch) => {
         dispatch(fetchProduct({
             ...dataState, isFetching: true
         }))
-        const firestore = getFirebase().firestore()
-        const productDocRef = doc(firestore, 'products', `${productId}`)
         try {
-            const product = await getDoc(productDocRef)
-            if (product.exists)
-                dispatch(fetchProduct({
-                    ...dataState,
-                    isLoading: false,
-                    isFetching: false,
-                    isLoaded: true,
-                    data: product.data()
-                }))
-        } catch (e) {
+            const product = await apiGetProduct(productId)
             dispatch(fetchProduct({
-                ...dataState.data,
+                ...dataState,
                 isLoading: false,
                 isFetching: false,
                 isLoaded: true,
-                error: e,
+                data: product
+            }))
+        } catch (e) {
+            dispatch(fetchProduct({
+                ...dataState,
+                isLoading: false,
+                isFetching: false,
+                isLoaded: true,
+                error: e.message,
                 data: null
             }))
         }

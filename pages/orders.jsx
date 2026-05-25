@@ -1,8 +1,8 @@
-import { Box, Button, Circle, color, Divider, Flex, Skeleton, Stack, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Circle, color, Divider, Flex, HStack, IconButton, Skeleton, Stack, Text, VStack } from '@chakra-ui/react'
 import Image from 'next/image'
 import { useEffect } from 'react'
 import { connect, useSelector } from 'react-redux'
-import { Circle as CircleIcon } from 'phosphor-react'
+import { ArrowLeft, Circle as CircleIcon } from 'phosphor-react'
 import { retrieveOrders } from '../store/orderReducer'
 
 import emptyOrder from '../public/package.png'
@@ -77,7 +77,7 @@ const OrderItem = ({ order }) => {
                             fontSize={'sm'}
                             textAlign={'start'}
                             textColor={'black'}>
-                            {`₦${new Intl.NumberFormat().format(order.price)}`}
+                            {`KSh ${new Intl.NumberFormat().format(order.price)}`}
                         </Text>
                     </VStack>
                 </Flex>
@@ -171,12 +171,12 @@ const OrderLayout = ({ order }) => {
                 />
                 <InfoText
                     subtitle={'Date'}
-                    info={`${order.date.toDate().toDateString().replace(' ', ', ')}`}
+                    info={`${new Date(order.date).toDateString().replace(' ', ', ')}`}
                     color={'black'}
                 />
                 <InfoText
                     subtitle={'Total Amount'}
-                    info={`₦${new Intl.NumberFormat().format(order.totalPrice)}`}
+                    info={`KSh ${new Intl.NumberFormat().format(order.totalPrice)}`}
                     color={'black'}
                 />
                 <InfoText
@@ -252,59 +252,49 @@ const Orders = ({ getOrders }) => {
     const router = useRouter()
     const { isLoading, isFetching, isLoaded, error, data }
         = useSelector((state) => state.order)
-    const hasNotAuth = useSelector((state) => state.persistFirebase.auth.isEmpty)
-
     useEffect(() => {
-        if (hasNotAuth) {
-            router.replace('/signup')
-            return
-        }
-
         getOrders()
-    }, [])
-
-    if (isLoaded && data?.length === 0)
-        return (
-            <VStack
-                width={'full'}
-                height={'60vh'}
-                justifyContent={'center'}
-                alignItems={'center'}
-                flexDirection={'column'}>
-                <Meta title={'Orders | Fobath Woodwork'} />
-                <Circle
-                    bgColor={'gray.200'}
-                    size={'140px'}>
-                    <Image
-                        src={emptyOrder}
-                        alt={'Empty order'}
-                        width={100}
-                    />
-                </Circle>
-                <Text
-                    fontWeight={'medium'}
-                    fontSize={'md'}
-                    textColor={'black'}>
-                    You have made no orders yet!
-                </Text>
-                <Text
-                    fontWeight={'normal'}
-                    fontSize={'sm'}
-                    textColor={'black'}>
-                    Discover our best offers by exploring our categories
-                </Text>
-                <Button
-                    variant={'solid'}
-                    marginTop={10}
-                    onClick={() => router.push('/')}>
-                    Continue shopping
-                </Button>
-            </VStack>
-        )
+    }, [getOrders])
 
     return (
         <>
-            {
+            {isLoaded && data?.length === 0 ? (
+                <VStack
+                    width={'full'}
+                    height={'60vh'}
+                    justifyContent={'center'}
+                    alignItems={'center'}
+                    flexDirection={'column'}>
+                    <Meta title={'Orders | Kejalux Interiors'} />
+                    <Circle
+                        bgColor={'gray.200'}
+                        size={'140px'}>
+                        <Image
+                            src={emptyOrder}
+                            alt={'Empty order'}
+                            width={100}
+                        />
+                    </Circle>
+                    <Text
+                        fontWeight={'medium'}
+                        fontSize={'md'}
+                        textColor={'black'}>
+                        You have made no orders yet!
+                    </Text>
+                    <Text
+                        fontWeight={'normal'}
+                        fontSize={'sm'}
+                        textColor={'black'}>
+                        Discover our best offers by exploring our categories
+                    </Text>
+                    <Button
+                        variant={'solid'}
+                        marginTop={10}
+                        onClick={() => router.push('/')}>
+                        Continue shopping
+                    </Button>
+                </VStack>
+            ) : (
                 <Flex
                     as={'section'}
                     paddingX={{base: 6, lg: 12}}
@@ -313,13 +303,21 @@ const Orders = ({ getOrders }) => {
                     justifyContent={'center'}
                     alignItems={'start'}
                     width={'full'}>
-                    <Meta title={'Orders | Fobath Woodwork'} />
-                    <Text
-                        fontWeight={'bold'}
-                        fontSize={{base: 'xl', lg: '2xl'}}
-                        textColor={'black'}>
-                        Order Details
-                    </Text>
+                    <Meta title={'Orders | Kejalux Interiors'} />
+                    <HStack spacing={3} alignItems={'center'}>
+                        <IconButton
+                            aria-label={'Go back'}
+                            variant={'ghost'}
+                            icon={<ArrowLeft size={18} />}
+                            onClick={() => router.back()}
+                        />
+                        <Text
+                            fontWeight={'bold'}
+                            fontSize={{base: 'xl', lg: '2xl'}}
+                            textColor={'black'}>
+                            Order Details
+                        </Text>
+                    </HStack>
                     <Text
                         fontWeight={'semibold'}
                         fontSize={'sm'}
@@ -331,7 +329,6 @@ const Orders = ({ getOrders }) => {
                         width={'full'}>
                         {
                             isLoading ? <LoadingSkeleton /> :
-
                                 data.map((order) =>
                                     <OrderLayout
                                         key={order.pid}
@@ -341,7 +338,7 @@ const Orders = ({ getOrders }) => {
                         }
                     </Box>
                 </Flex>
-            }
+            )}
         </>
     )
 }

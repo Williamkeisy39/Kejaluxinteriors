@@ -2,8 +2,6 @@ import { Button, Flex, Input, Menu, MenuButton, MenuItemOption, MenuList, MenuOp
 import { CaretDoubleDown, Circle } from "phosphor-react"
 import { useState } from "react"
 import { connect } from "react-redux"
-import firebase from 'firebase/compat/app'
-
 import { addNewProduct } from "../../store/addProductReducer"
 
 import { AddProductValidation } from '../../utils/validate'
@@ -83,7 +81,7 @@ const UploadProduct = ({ uploadNewProduct }) => {
                 height: Number(product.height),
                 color: selectedColorName,
                 colorValue: selectedColorValue,
-                createdAt: firebase.firestore.Timestamp.fromDate(new Date()),
+                createdAt: new Date().toISOString(),
             }
 
             changeLoadState()
@@ -153,7 +151,7 @@ const UploadProduct = ({ uploadNewProduct }) => {
                             textColor={'black'}
                             fontWeight={'medium'}
                             fontSize={'sm'}>
-                            Product price (NGN)
+                            Product price (KSh)
                         </Text>
 
                         <Input
@@ -199,11 +197,11 @@ const UploadProduct = ({ uploadNewProduct }) => {
                                     onChange={(e) => setProduct(prevProd => ({ ...prevProd, category: e }))}>
                                     <MenuItemOption value={'sofa'}>Sofa</MenuItemOption>
                                     <MenuItemOption value={'bed'}>Bed</MenuItemOption>
-                                    <MenuItemOption value={'shoe-rack'}>Shoe Rack</MenuItemOption>
-                                    <MenuItemOption value={'ward-robe'}>Ward Robe</MenuItemOption>
+                                    <MenuItemOption value={'wardrobe'}>Wardrobe</MenuItemOption>
                                     <MenuItemOption value={'shelf'}>Shelf</MenuItemOption>
+                                    <MenuItemOption value={'office'}>Office</MenuItemOption>
                                     <MenuItemOption value={'tv-console'}>TV Console</MenuItemOption>
-                                    <MenuItemOption value={'table-and-chair'}>Table and chair</MenuItemOption>
+                                    <MenuItemOption value={'outdoor'}>Outdoor</MenuItemOption>
                                 </MenuOptionGroup>
                             </MenuList>
                         </Menu>

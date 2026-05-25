@@ -1,10 +1,9 @@
 import { Box, Button, Circle, Divider, Flex, HStack, IconButton, Stack, Text, VStack } from '@chakra-ui/react'
-import { doc, getDoc } from 'firebase/firestore'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import firebase from 'firebase/compat/app'
-import { Minus, Plus, Trash } from 'phosphor-react'
+import { apiGetProduct } from '../utils/api'
+import { ArrowLeft, Minus, Plus, Trash } from 'phosphor-react'
 import { increaseQuantity, decreaseQuantity, deleteFromCart } from '../store/cartReducer'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.min.css'
@@ -66,7 +65,7 @@ const CartItem = ({ item, cart, onDelete }) => {
                         fontSize={'md'}
                         textAlign={'start'}
                         textColor={'black'}>
-                        {`₦${new Intl.NumberFormat().format(item.productPrice)}`}
+                        {`KSh ${new Intl.NumberFormat().format(item.productPrice)}`}
                     </Text>
 
                 </VStack>
@@ -192,19 +191,21 @@ const CartItem = ({ item, cart, onDelete }) => {
 const Cart = () => {
 
     const router = useRouter()
-    const cart = useSelector((state) => state.persistFirebase.profile.cart)
+    const cart = useSelector((state) => state.auth.profile.cart)
     const [product, setProduct] = useState([])
-    const firestore = firebase.firestore()
+    const shippingFee = 500
+    const subtotal = Number(cart?.totalPrice || 0)
+    const total = subtotal + shippingFee
 
     useEffect(() => {
         let productIds = Object.keys(cart ? cart.items : {})
         let tempCart = []
         const getCartItem = async () => {
             await Promise.all(productIds.map(async (id) => {
-                const docRef = doc(firestore, `products/${id}`)
-                const docSnap = await getDoc(docRef)
-                if (docSnap.exists)
-                    tempCart.push({ pid: id, ...docSnap.data() })
+                try {
+                    const p = await apiGetProduct(id)
+                    tempCart.push(p)
+                } catch (e) { /* skip missing */ }
             }))
             setProduct(tempCart)
         }
@@ -226,7 +227,7 @@ const Cart = () => {
                         justifyContent={'center'}
                         alignItems={'center'}
                         flexDirection={'column'}>
-                        <Meta title={'Cart | Fobath Woodwork'} />
+                        <Meta title={'Cart | Kejalux Interiors'} />
                         <ToastContainer />
 
                         <Circle
@@ -269,7 +270,7 @@ const Cart = () => {
                         paddingY={{ base: 4, lg: 8 }}
                         backgroundColor={'gray.50'}
                         flexDirection={{ base: 'column', lg: 'row' }}>
-                        <Meta title={'Cart | Fobath Woodwork'} />
+                        <Meta title={'Cart | Kejalux Interiors'} />
 
                         <VStack
                             flexDirection={'column'}
@@ -279,16 +280,24 @@ const Cart = () => {
                             width={{ base: '100%', lg: '45%' }}>
 
                             <HStack
-                                alignItems={'baseline'}
+                                alignItems={'center'}
                                 justifyContent={'space-between'}
                                 w={'full'}
                                 py={2}>
-                                <Text
-                                    fontWeight={'bold'}
-                                    fontSize={{base: 'xl', lg: '2xl'}}
-                                    textColor={'black'}>
-                                    Your Cart
-                                </Text>
+                                <HStack spacing={3} alignItems={'center'}>
+                                    <IconButton
+                                        aria-label={'Go back'}
+                                        variant={'ghost'}
+                                        icon={<ArrowLeft size={18} />}
+                                        onClick={() => router.back()}
+                                    />
+                                    <Text
+                                        fontWeight={'bold'}
+                                        fontSize={{base: 'xl', lg: '2xl'}}
+                                        textColor={'black'}>
+                                        Your Cart
+                                    </Text>
+                                </HStack>
 
                                 <Text
                                     fontWeight={'semibold'}
@@ -348,7 +357,7 @@ const Cart = () => {
                                 <Text
                                     fontWeight={'normal'}
                                     textColor={'black'}>
-                                    {`₦${new Intl.NumberFormat().format(cart?.totalPrice)}`}
+                                    {`KSh ${new Intl.NumberFormat().format(cart?.totalPrice)}`}
                                 </Text>
                             </Flex>
                             <Divider orientation={'horizontal'} bgColor={'gray.200'} height={'1px'} />
@@ -366,7 +375,7 @@ const Cart = () => {
                                 <Text
                                     fontWeight={'normal'}
                                     textColor={'black'}>
-                                    ₦9,000
+                                    {`KSh ${new Intl.NumberFormat().format(shippingFee)}`}
                                 </Text>
                             </Flex>
                             <Divider orientation={'horizontal'} bgColor={'gray.200'} height={'1px'} />
@@ -384,7 +393,7 @@ const Cart = () => {
                                 <Text
                                     fontWeight={'medium'}
                                     textColor={'black'}>
-                                    ₦99,000
+                                    {`KSh ${new Intl.NumberFormat().format(total)}`}
                                 </Text>
                             </Flex>
 

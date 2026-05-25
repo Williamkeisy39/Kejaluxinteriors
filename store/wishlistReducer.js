@@ -1,5 +1,39 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
+import { apiUpdateWishlist } from "../utils/api";
+import { updateProfile } from "./authReducer";
+
+const guestWishlistKey = 'guest_wishlist'
+
+const getGuestWishlist = () => {
+    if (typeof window === 'undefined') return []
+    try {
+        const stored = localStorage.getItem(guestWishlistKey)
+        return stored ? JSON.parse(stored) : []
+    } catch {
+        return []
+    }
+}
+
+const setGuestWishlist = (wishlist) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem(guestWishlistKey, JSON.stringify(wishlist))
+    }
+}
+
+const syncWishlist = async (dispatch, newWishlist) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (token) {
+        try {
+            await apiUpdateWishlist(newWishlist)
+        } catch {
+            setGuestWishlist(newWishlist)
+        }
+    } else {
+        setGuestWishlist(newWishlist)
+    }
+    return newWishlist
+}
 
 const wishlistSlice = createSlice({
     name: 'wishlist',
@@ -33,52 +67,23 @@ export const { addItemToWishlist, removeItemFromWishlist } = wishlistSlice.actio
 export default wishlistSlice.reducer
 
 export const addToWishlist = (productId, wishlist) => {
-    return async (dispatch, getState, { getFirebase }) => {
+    return async (dispatch) => {
         if (wishlist.includes(productId)) {
-            dispatch(addItemToWishlist(
-                {
-                    info: 'FAIL',
-                    items: wishlist
-                }
-            ))
+            dispatch(addItemToWishlist({ info: 'FAIL', items: wishlist }))
             return
         }
         const newWishlist = [...wishlist, productId]
-        const firestore = getFirebase().firestore()
-        const userId = getState().persistFirebase.auth.uid
-        firestore
-            .collection('users')
-            .doc(userId)
-            .update({
-                'wishlist': newWishlist
-            })
-            .then(() => dispatch(addItemToWishlist(
-                {
-                    info: 'ADD',
-                    items: newWishlist
-                }
-            )))
+        await syncWishlist(dispatch, newWishlist)
+        dispatch(updateProfile({ wishlist: newWishlist }))
+        dispatch(addItemToWishlist({ info: 'ADD', items: newWishlist }))
     }
 }
 
 export const deleteFromWishlist = (productId, wishlist) => {
-    return async (dispatch, getState, { getFirebase }) => {
-        const index = wishlist.indexOf(productId)
-        wishlist.splice(index, 1)
-
-        const firestore = getFirebase().firestore()
-        const userId = getState().persistFirebase.auth.uid
-        firestore
-            .collection('users')
-            .doc(userId)
-            .update({
-                'wishlist': wishlist
-            })
-            .then(() => dispatch(removeItemFromWishlist(
-                {
-                    info: 'DELETE',
-                    items: wishlist
-                }
-            )))
+    return async (dispatch) => {
+        const newWishlist = wishlist.filter(id => id !== productId)
+        await syncWishlist(dispatch, newWishlist)
+        dispatch(updateProfile({ wishlist: newWishlist }))
+        dispatch(removeItemFromWishlist({ info: 'DELETE', items: newWishlist }))
     }
 }

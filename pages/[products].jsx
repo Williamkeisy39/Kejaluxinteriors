@@ -90,7 +90,7 @@ const LoadingSkeleton = () => {
     )
 }
 
-const FilterAccordionItem = ({ accordionTitle, cat, filterByColor, items, lastVisible }) => {
+const FilterAccordionItem = ({ accordionTitle, cat, filterByColor, items, page }) => {
 
     return (
         <AccordionItem>
@@ -115,7 +115,7 @@ const FilterAccordionItem = ({ accordionTitle, cat, filterByColor, items, lastVi
                                             key={i}
                                             value={item}
                                             colorScheme={'orange'}
-                                            onChange={e => filterByColor(cat, e.currentTarget.value.toLowerCase(), lastVisible)}>
+                                            onChange={e => filterByColor(cat, e.currentTarget.value.toLowerCase(), page)}>
                                             {item}
                                         </Radio>
                                     ))
@@ -129,7 +129,7 @@ const FilterAccordionItem = ({ accordionTitle, cat, filterByColor, items, lastVi
     )
 }
 
-const FilterDrawer = ({ isOpen, onClose, btnRef, cat, lastVisible, fetchProducts, filterByColor, filterByPrice }) => {
+const FilterDrawer = ({ isOpen, onClose, btnRef, cat, page, fetchProducts, filterByColor, filterByPrice }) => {
 
     const [priceRange, setPriceRange] = useState([100000, 250000])
 
@@ -160,14 +160,14 @@ const FilterDrawer = ({ isOpen, onClose, btnRef, cat, lastVisible, fetchProducts
                                 cat={cat}
                                 filterByColor={filterByColor}
                                 items={['White', 'Matte black', 'Velvet', 'Brown']}
-                                lastVisible={lastVisible}
+                                page={page}
                             />
 
                             <Text
                                 textColor={'black'}
                                 fontWeight={'semibold'}
                                 marginTop={4}>
-                                Price (Naira)
+                                Price (KSh)
                             </Text>
 
                             <RangeSlider aria-label={['min', 'max']}
@@ -189,14 +189,14 @@ const FilterDrawer = ({ isOpen, onClose, btnRef, cat, lastVisible, fetchProducts
                                     textColor={'gray.900'}
                                     fontSize={'xs'}
                                     fontWeight={'medium'}>
-                                    {`₦${new Intl.NumberFormat().format(priceRange[0])}`}
+                                    {`KSh ${new Intl.NumberFormat().format(priceRange[0])}`}
                                 </Text>
 
                                 <Text
                                     textColor={'gray.900'}
                                     fontSize={'xs'}
                                     fontWeight={'medium'}>
-                                    {`₦${new Intl.NumberFormat().format(priceRange[1])}`}
+                                    {`KSh ${new Intl.NumberFormat().format(priceRange[1])}`}
                                 </Text>
                             </Flex>
 
@@ -210,7 +210,7 @@ const FilterDrawer = ({ isOpen, onClose, btnRef, cat, lastVisible, fetchProducts
                                     mr={3}
                                     textTransform={'uppercase'}
                                     _hover={{ bgColor: 'blackAlpha.100', color: 'gold.500' }}
-                                    onClick={() => filterByPrice(cat, priceRange[0], priceRange[1], lastVisible)}>
+                                    onClick={() => filterByPrice(cat, priceRange[0], priceRange[1], page)}>
                                     Apply
                                 </Button>
                                 <Button
@@ -219,7 +219,7 @@ const FilterDrawer = ({ isOpen, onClose, btnRef, cat, lastVisible, fetchProducts
                                     paddingX={18}
                                     paddingY={2}
                                     _hover={{ bgColor: 'blackAlpha.100', color: 'gold.500' }}
-                                    onClick={() => fetchProducts(cat, {}, lastVisible)}>
+                                    onClick={() => fetchProducts(cat, {}, 1)}>
                                     clear
                                 </Button>
                             </Flex>
@@ -233,23 +233,37 @@ const FilterDrawer = ({ isOpen, onClose, btnRef, cat, lastVisible, fetchProducts
 
 const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
     const router = useRouter()
-    const path = router.asPath.replace('/', '')
+    const path = typeof router.query.products === 'string' ? router.query.products : ''
 
     const { isOpen, onOpen, onClose } = useDisclosure()
     const buttonDrawerRef = useRef()
     const containerRef = useRef(null)
 
-    const { isLoading, isFetching, isLoaded, error, data, lastVisible, endOfData }
+    const { isLoading, isFetching, isLoaded, error, data, page, endOfData }
         = useSelector((state) => state.products)
+    const safeData = data || {}
+
+    const fetchProducts = (category, prevData, nextPage) => {
+        getProducts(category, prevData, nextPage)
+    }
 
     useEffect(() => {
-        fetchProducts(path, {}, null)
-    }, [path])
+        if (!router.isReady || !path) return
+        fetchProducts(path, {}, 1)
+    }, [path, router.isReady])
 
-    if (error) return <Text>An error occurred.</Text>
-
-    const fetchProducts = (path, data, lastVisible) => {
-        getProducts(path, data, lastVisible)
+    if (error) {
+        return (
+            <Flex
+                minH={'50vh'}
+                alignItems={'center'}
+                justifyContent={'center'}
+                direction={'column'}
+                gap={2}>
+                <Text fontWeight={'semibold'}>An error occurred.</Text>
+                <Text fontSize={'sm'} color={'gray.600'}>{error}</Text>
+            </Flex>
+        )
     }
 
     return (
@@ -262,7 +276,7 @@ const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
             alignItems={'center'}>
 
             <ToastContainer />
-            <Meta title={`${path.replaceAll('-', ' ')} | Fobath Woodwork`} />
+            <Meta title={`${path.replaceAll('-', ' ')} | Kejalux Interiors`} />
 
             <Flex
                 alignItems={'center'}
@@ -293,7 +307,7 @@ const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
             </Flex>
 
             {
-                isLoaded && Object.values(data).length === 0 &&
+                isLoaded && Object.values(safeData).length === 0 &&
                 <VStack
                     width={'full'}
                     height={'60vh'}
@@ -363,7 +377,7 @@ const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
                                 }
                             }}>
                             {
-                                Object.values(data).map(product => (
+                                Object.values(safeData).map(product => (
                                     <ProductItem
                                         key={product.pid}
                                         productId={product.pid}
@@ -374,8 +388,9 @@ const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
                             }
                         </Grid>
 
-                        { !endOfData ?
-                            <Button variant={'ghost'}
+                        {!endOfData && (
+                            <Button
+                                variant={'ghost'}
                                 fontWeight={'medium'}
                                 shadow={'sm'}
                                 borderWidth={1}
@@ -383,15 +398,10 @@ const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
                                 transition={'all .5s'}
                                 mt={6}
                                 textTransform={'capitalize'}
-                                onClick={() => fetchProducts(path, data, lastVisible)}>
+                                onClick={() => fetchProducts(path, data, page + 1)}>
                                 Load more
                             </Button>
-                            :
-                            Object.values(data).length > 0 &&
-                            <Text mt={6} fontWeight={'light'} fontSize={'sm'}>
-                                You&apos;ve reached the end of products listing
-                            </Text>
-                        }
+                        )}
                     </Flex>
             }
 
@@ -400,7 +410,7 @@ const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
                 onClose={onClose}
                 btnRef={buttonDrawerRef}
                 cat={path}
-                lastVisible={lastVisible}
+                page={page}
                 fetchProducts={getProducts}
                 filterByColor={getProductsByColor}
                 filterByPrice={getProductsByPrice}
@@ -412,12 +422,12 @@ const Products = ({ getProducts, getProductsByColor, getProductsByPrice }) => {
 
 export const matchDispatchToProps = dispatch => {
     return {
-        getProducts: (path, data, lastVisible) =>
-            dispatch(getProducts(path, data, lastVisible)),
-        getProductsByColor: (cat, color, lastVisible) =>
-            dispatch(getProductsByColor(cat, color, lastVisible)),
-        getProductsByPrice: (cat, minPrice, maxPrice, lastVisible) =>
-            dispatch(getProductsByPrice(cat, minPrice, maxPrice, lastVisible))
+        getProducts: (path, data, page) =>
+            dispatch(getProducts(path, data, page)),
+        getProductsByColor: (cat, color, page) =>
+            dispatch(getProductsByColor(cat, color, page)),
+        getProductsByPrice: (cat, minPrice, maxPrice, page) =>
+            dispatch(getProductsByPrice(cat, minPrice, maxPrice, page))
     }
 }
 

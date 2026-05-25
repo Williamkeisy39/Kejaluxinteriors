@@ -7,17 +7,16 @@ const Meta = ({ title, keywords, description }) => {
             <meta name='keywords' content={keywords} />
             <meta name='description' content={description} />
             <meta charSet='utf-8' />
-            <link rel='icon' href='/favicon.ico' />
+            <link rel='icon' type='image/png' href='/kejaluxfv.png' />
             <title>{title}</title>
         </Head>
     )
 }
 
 Meta.defaultProps = {
-    title: 'Urban Interiors',
-    keywords: 'furniture, dining, office chair, bedroom furniture, \
-         sofa, couch, pallet, bed, wardrobe, shoe-rack, chair, table, tv stand, tv console',
-    description: ''
+    title: 'Kejalux Interiors | Premium Furniture & Interior Decor',
+    keywords: 'furniture, interior decor, business furniture, outdoor pallet furniture, office furniture, sofa, bed, wardrobe, shelves, TV console, pallet furniture, Kejalux',
+    description: 'Kejalux Interiors — premium interior decor, business furniture, outdoor pallet furniture, and custom-made furniture solutions in Kenya.'
 }
 
 export default Meta

@@ -21,6 +21,15 @@ const rotateKeyFrames = keyframes`
 `
 const rotateAnimation = `${rotateKeyFrames} 10s ease-in-out infinite`
 
+const sectionReveal = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.8, ease: 'easeOut' }
+    }
+}
+
 const CategoryItem = ({ catImg, catTitle }) => {
     const category = catTitle.toLowerCase().replace(' ', '-')
 
@@ -80,7 +89,11 @@ const Category = () => {
     return (
         <Flex
             id={'products'}
-            as={'section'}
+            as={motion.section}
+            variants={sectionReveal}
+            initial={'hidden'}
+            whileInView={'visible'}
+            viewport={{ once: true, amount: 0.2 }}
             flexDirection={'column'}
             paddingX={{ base: 6, lg: 12 }}
             paddingY={{base: 8, lg: 16}}
@@ -95,14 +108,14 @@ const Category = () => {
                     fontSize={{ base: '2xl', lg: '3xl' }}
                     textAlign={'center'}
                     textColor={'black'}>
-                    Browse by Category
+                    Shop by Category
                 </Text>
                 <Text
                     fontWeight={'medium'}
                     fontSize={'sm'}
                     textColor={'gray.700'}
                     marginTop={1}>
-                    Choose from wide variety of items
+                    Interior decor, business & outdoor pallet furniture
                 </Text>
             </Flex>
 
@@ -114,11 +127,11 @@ const Category = () => {
                 justifyContent={'space-between'}>
                 <CategoryItem catImg={couch} catTitle={'Sofa'} />
                 <CategoryItem catImg={bed} catTitle={'Bed'} />
-                <CategoryItem catImg={shoeRack} catTitle={'Shoe rack'} />
-                <CategoryItem catImg={wardrobe} catTitle={'Ward robe'} />
                 <CategoryItem catImg={shelf} catTitle={'Shelf'} />
+                <CategoryItem catImg={wardrobe} catTitle={'Wardrobe'} />
+                <CategoryItem catImg={chair} catTitle={'Office'} />
                 <CategoryItem catImg={console} catTitle={'TV console'} />
-                <CategoryItem catImg={chair} catTitle={'Table and chair'} />
+                <CategoryItem catImg={shoeRack} catTitle={'Outdoor'} />
             </Stack>
 
             <Grid
@@ -131,11 +144,11 @@ const Category = () => {
                 }}>
                 <CategoryItem catImg={couch} catTitle={'Sofa'} />
                 <CategoryItem catImg={bed} catTitle={'Bed'} />
-                <CategoryItem catImg={shoeRack} catTitle={'Shoe rack'} />
-                <CategoryItem catImg={wardrobe} catTitle={'Ward robe'} />
                 <CategoryItem catImg={shelf} catTitle={'Shelf'} />
+                <CategoryItem catImg={wardrobe} catTitle={'Wardrobe'} />
+                <CategoryItem catImg={chair} catTitle={'Office'} />
                 <CategoryItem catImg={console} catTitle={'TV console'} />
-                <CategoryItem catImg={chair} catTitle={'Table and chair'} />
+                <CategoryItem catImg={shoeRack} catTitle={'Outdoor'} />
             </Grid>
 
 

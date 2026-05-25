@@ -2,7 +2,7 @@ import { Box, Breadcrumb, BreadcrumbItem, Button, Flex, HStack, keyframes, Text,
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { CaretRight, Heart, Minus, Plus } from 'phosphor-react'
+import { ArrowLeft, CaretRight, Heart, Minus, Plus } from 'phosphor-react'
 import { Circle as CircleIcon } from 'phosphor-react'
 import { connect, useSelector } from 'react-redux'
 import { useEffect, useState } from 'react'
@@ -133,7 +133,7 @@ const ModalDialogItem = ({ productName, productPrice, colorValue, colorName, pid
                     fontWeight={'medium'}
                     fontSize={'sm'}
                     textColor={'gray.900'}>
-                    {`₦${new Intl.NumberFormat().format(productPrice)}`}
+                    {`KSh ${new Intl.NumberFormat().format(productPrice)}`}
                 </Text>
             </Stack>
 
@@ -209,28 +209,28 @@ const ProductDetail =
     ({ getProduct, addToCart, increaseItemQuantity, decreaseItemQuantity, addToWishlist }) => {
         const router = useRouter()
         const path = router.asPath.split('/')
-        const pid = localStorage.getItem('PRODUCT_REF', '')
+        const pid = router.query.product || (typeof window !== 'undefined' ? localStorage.getItem('PRODUCT_REF') : '')
 
         const { isLoading, isFetching, isLoaded, error, data }
             = useSelector((state) => state.product)
         const [currentImage, setCurrentImage] = useState('')
 
-        const hasNotAuth = useSelector((state) => state.persistFirebase.profile.isEmpty)
+        const cart = useSelector((state) => state.auth.profile.cart)
 
-        const cart = useSelector((state) => state.persistFirebase.profile.cart)
+        const wishlist = useSelector((state) => state.auth.profile.wishlist)
 
-        const wishlist = useSelector((state) => state.persistFirebase.profile.wishlist)
-
-        const cartItems = useSelector((state) => state?.persistFirebase?.profile?.cart?.items)
+        const cartItems = useSelector((state) => state?.auth?.profile?.cart?.items)
 
         const { isOpen, onOpen, onClose } = useDisclosure()
 
         const cartProduct = cartItems && cartItems[pid]
         const isInCart = cartItems && cartItems[pid] ? true : false
+        const hasColors = Array.isArray(data?.colorValue) && data.colorValue.length > 0
 
         useEffect(() => {
+            if (!router.isReady || !pid) return
             getProduct(pid)
-        }, [])
+        }, [getProduct, pid, router.isReady])
 
         // if (isLoading) return <Text>Fetching...</Text>
 
@@ -244,8 +244,8 @@ const ProductDetail =
                 alignItems={'start'}>
 
                 <Meta
-                    title={isLoading ? 'Please wait... | Fobath Woodwork' :
-                        `${data.productName} | Fobath Woodwork`}
+                    title={isLoading ? 'Please wait... | Kejalux Interiors' :
+                        `${data.productName} | Kejalux Interiors`}
                 />
                 <ToastContainer />
 
@@ -285,30 +285,39 @@ const ProductDetail =
                     </ModalContent>
                 </Modal>
 
-                <Breadcrumb
-                    spacing={2}
-                    separator={<CaretRight color={'#3e3e3e'} weight={'bold'} size={14} />}
-                    fontWeight={'medium'}
-                    fontSize={'sm'}
-                    textDecoration={'none'}>
-                    <BreadcrumbItem textColor={'gray.600'} transition={'all .2s'} _hover={{ color: 'gold.500' }}>
-                        <Link href='/'>Home</Link>
-                    </BreadcrumbItem>
+                <Flex alignItems={'center'} gap={3} flexWrap={'wrap'}>
+                    <IconButton
+                        aria-label={'Go back'}
+                        variant={'ghost'}
+                        size={'sm'}
+                        icon={<ArrowLeft size={18} />}
+                        onClick={() => router.back()}
+                    />
+                    <Breadcrumb
+                        spacing={2}
+                        separator={<CaretRight color={'#3e3e3e'} weight={'bold'} size={14} />}
+                        fontWeight={'medium'}
+                        fontSize={'sm'}
+                        textDecoration={'none'}>
+                        <BreadcrumbItem textColor={'gray.600'} transition={'all .2s'} _hover={{ color: 'gold.500' }}>
+                            <Link href='/'>Home</Link>
+                        </BreadcrumbItem>
 
-                    <BreadcrumbItem textColor={'gray.600'} transition={'all .2s'} textTransform={'capitalize'} _hover={{ color: 'gold.500' }}>
-                        <Text
-                            as={'button'}
-                            fontWeight={'medium'}
-                            textTransform={'capitalize'}
-                            onClick={() => router.back()}>
-                            {path[1].replace('-', ' ')}
-                        </Text>
-                    </BreadcrumbItem>
+                        <BreadcrumbItem textColor={'gray.600'} transition={'all .2s'} textTransform={'capitalize'} _hover={{ color: 'gold.500' }}>
+                            <Text
+                                as={'button'}
+                                fontWeight={'medium'}
+                                textTransform={'capitalize'}
+                                onClick={() => router.back()}>
+                                {path[1].replace('-', ' ')}
+                            </Text>
+                        </BreadcrumbItem>
 
-                    <BreadcrumbItem textColor={'gray.900'} textTransform={'capitalize'} isCurrentPage>
-                        <Text>{isLoaded && data.productName}</Text>
-                    </BreadcrumbItem>
-                </Breadcrumb>
+                        <BreadcrumbItem textColor={'gray.900'} textTransform={'capitalize'} isCurrentPage>
+                            <Text>{isLoaded && data.productName}</Text>
+                        </BreadcrumbItem>
+                    </Breadcrumb>
+                </Flex>
 
                 {
                     isLoading ? <LoadingSkeleton />
@@ -381,7 +390,7 @@ const ProductDetail =
                                     fontSize={'xl'}
                                     textColor={'gray.900'}
                                     marginTop={2}>
-                                    {`₦${new Intl.NumberFormat().format(data.productPrice)}`}
+                                    {`KSh ${new Intl.NumberFormat().format(data.productPrice)}`}
                                 </Text>
 
                                 <Text
@@ -476,11 +485,13 @@ const ProductDetail =
                                             textTransform={'uppercase'}
                                             letterSpacing={'wide'}
                                             onClick={() => {
-                                                if (hasNotAuth) {
-                                                    router.push('/signup')
+                                                if (hasColors) {
+                                                    onOpen()
                                                     return
                                                 }
-                                                onOpen()
+                                                const colorName = Array.isArray(data?.color) && data.color.length ? data.color[0] : ''
+                                                const colorValue = Array.isArray(data?.colorValue) && data.colorValue.length ? data.colorValue[0] : ''
+                                                addToCart(pid, data.productPrice, colorName, colorValue, cart)
                                             }}>
                                             Add to cart
                                         </Button>
@@ -495,10 +506,7 @@ const ProductDetail =
                                     borderColor={'gray.300'}
                                     leftIcon={<Heart size={16} color={'#B4BABE'} weight={'fill'} />}
                                     onClick={() => {
-                                        if (hasNotAuth)
-                                            router.push('/signup')
-                                        else
-                                            addToWishlist(pid, wishlist)
+                                        addToWishlist(pid, wishlist)
                                     }}>
                                     Add to wishlist
                                 </Button>

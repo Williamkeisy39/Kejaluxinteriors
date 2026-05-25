@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { collection, getDocs, limit, orderBy, query, startAfter, where } from "firebase/firestore";
+import { apiGetProducts } from "../utils/api";
 
 const dataState = {
     isLoading: true,
@@ -7,7 +7,7 @@ const dataState = {
     isLoaded: false,
     error: null,
     data: {},
-    lastVisible: null,
+    page: 1,
     endOfData: false
 }
 
@@ -32,117 +32,125 @@ export const { fetchProducts, filterProductsByPrice, filterProductsBySubCategory
 
 export default productSlice.reducer
 
-export const getProducts = (path, prevData, lastVisible) => {
-    return async (dispatch, getState, { getFirebase }) => {
+export const getAllProducts = (page, prevData = {}) => {
+    return async (dispatch) => {
         dispatch(fetchProducts({
             ...dataState, isFetching: true
         }))
-
-        const firestore = getFirebase().firestore()
-        const productRef = collection(firestore, 'products')
-        const productQuery = query(productRef, where('category', '==', path),
-            orderBy('createdAt'), startAfter(lastVisible || 0), limit(20))
-        const result = {}
         try {
-            const querySnapshot = await getDocs(productQuery)
-            const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]
-            querySnapshot.forEach((product) => {
-                result[product.id] = { pid: product.id, ...product.data() }
-            })
-
+            const res = await apiGetProducts({ page: page || 1, limit: 20 })
+            const result = {}
+            res.products.forEach((p) => { result[p.pid] = p })
+            const mergedData = Object.keys(prevData).length ? { ...prevData, ...result } : result
             dispatch(fetchProducts({
                 ...dataState,
                 isLoading: false,
                 isFetching: false,
                 isLoaded: true,
-                data: {...prevData, ...result},
-                lastVisible: lastVisible,
-                endOfData: querySnapshot.empty
+                data: mergedData,
+                page: res.page,
+                endOfData: res.endOfData
             }))
         } catch (e) {
             dispatch(fetchProducts({
                 ...dataState,
                 isLoading: false,
                 isFetching: false,
-                error: e,
+                error: e.message,
                 data: null
             }))
         }
     }
 }
 
-export const getProductsByColor = (path, color, lastVisible) => {
-    return async (dispatch, getState, { getFirebase }) => {
+export const getProducts = (path, prevData, page) => {
+    return async (dispatch) => {
         dispatch(fetchProducts({
             ...dataState, isFetching: true
         }))
-
-        const firestore = getFirebase().firestore()
-        const productRef = collection(firestore, 'products')
-        const priceFilterQuery = query(productRef, where('category', '==', path),
-            orderBy('createdAt'), where('color', 'array-contains', color),
-            startAfter(lastVisible || 0), limit(20))
-        const result = {}
         try {
-            const querySnapshot = await getDocs(priceFilterQuery)
-            const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]
-            querySnapshot.forEach((product) => {
-                result[product.id] = { pid: product.id, ...product.data() }
-            })
+            const res = await apiGetProducts({ category: path, page: page || 1, limit: 20 })
+            const result = {}
+            res.products.forEach((p) => { result[p.pid] = p })
             dispatch(fetchProducts({
                 ...dataState,
                 isLoading: false,
                 isFetching: false,
                 isLoaded: true,
-                data: result,
-                lastVisible,
-                endOfData: querySnapshot.empty
+                data: { ...prevData, ...result },
+                page: res.page,
+                endOfData: res.endOfData
             }))
         } catch (e) {
             dispatch(fetchProducts({
                 ...dataState,
                 isLoading: false,
                 isFetching: false,
-                error: e,
+                error: e.message,
                 data: null
             }))
         }
     }
 }
 
-export const getProductsByPrice = (path, minPrice, maxPrice, lastVisible) => {
-    return async (dispatch, getState, { getFirebase }) => {
+export const getProductsByColor = (path, color, page) => {
+    return async (dispatch) => {
         dispatch(fetchProducts({
             ...dataState, isFetching: true
         }))
-
-        const firestore = getFirebase().firestore()
-        const productRef = collection(firestore, 'products')
-        const priceFilterQuery = query(productRef, orderBy('productPrice'),
-            where('category', '==', path), where('productPrice', '>=', minPrice), 
-            where('productPrice', '<=', maxPrice), startAfter(lastVisible || 0), limit(20))
-        const result = {}
         try {
-            const querySnapshot = await getDocs(priceFilterQuery)
-            const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]
-            querySnapshot.forEach((product) => {
-                result[product.id] = { pid: product.id, ...product.data() }
-            })
+            const params = { color, page: page || 1, limit: 20 }
+            if (path) params.category = path
+            const res = await apiGetProducts(params)
+            const result = {}
+            res.products.forEach((p) => { result[p.pid] = p })
             dispatch(fetchProducts({
                 ...dataState,
                 isLoading: false,
                 isFetching: false,
                 isLoaded: true,
                 data: result,
-                lastVisible,
-                endOfData: querySnapshot.empty
+                page: res.page,
+                endOfData: res.endOfData
             }))
         } catch (e) {
             dispatch(fetchProducts({
                 ...dataState,
                 isLoading: false,
                 isFetching: false,
-                error: e,
+                error: e.message,
+                data: null
+            }))
+        }
+    }
+}
+
+export const getProductsByPrice = (path, minPrice, maxPrice, page) => {
+    return async (dispatch) => {
+        dispatch(fetchProducts({
+            ...dataState, isFetching: true
+        }))
+        try {
+            const params = { minPrice, maxPrice, page: page || 1, limit: 20 }
+            if (path) params.category = path
+            const res = await apiGetProducts(params)
+            const result = {}
+            res.products.forEach((p) => { result[p.pid] = p })
+            dispatch(fetchProducts({
+                ...dataState,
+                isLoading: false,
+                isFetching: false,
+                isLoaded: true,
+                data: result,
+                page: res.page,
+                endOfData: res.endOfData
+            }))
+        } catch (e) {
+            dispatch(fetchProducts({
+                ...dataState,
+                isLoading: false,
+                isFetching: false,
+                error: e.message,
                 data: null
             }))
         }
@@ -150,36 +158,28 @@ export const getProductsByPrice = (path, minPrice, maxPrice, lastVisible) => {
 }
 
 export const getProductsBySubCategory = (subCategory) => {
-    return async (dispatch, getState, { getFirebase }) => {
+    return async (dispatch) => {
         dispatch(filterProductsBySubCategory({
             ...dataState, isFetching: true
         }))
-
-        const firestore = getFirebase().firestore()
-        const productRef = collection(firestore, 'products')
-        const subCategoryQuery = query(productRef, where('subcategory', 'array-contains', subCategory),
-            orderBy('createdAt'), startAfter(dataState.lastVisible || 0), limit(20))
-        const result = {}
         try {
-            const querySnapshot = await getDocs(subCategoryQuery)
-            querySnapshot.forEach((product) => {
-                result[product.id] = { pid: product.id, ...product.data() }
-            })
-
+            const res = await apiGetProducts({ subcategory: subCategory, limit: 20 })
+            const result = {}
+            res.products.forEach((p) => { result[p.pid] = p })
             dispatch(filterProductsBySubCategory({
                 ...dataState,
                 isLoading: false,
                 isFetching: false,
                 isLoaded: true,
                 data: result,
-                endOfData: querySnapshot.empty
+                endOfData: res.endOfData
             }))
         } catch (e) {
             dispatch(filterProductsBySubCategory({
                 ...dataState,
                 isLoading: false,
                 isFetching: false,
-                error: e,
+                error: e.message,
                 data: null
             }))
         }

@@ -2,20 +2,27 @@ import { Box, Button, Circle, Divider, Flex, HStack, IconButton, Stack, Text, VS
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { connect, useSelector } from 'react-redux';
-import firebase from 'firebase/compat/app'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.min.css'
-import { doc, getDoc } from 'firebase/firestore'
-import { Trash } from 'phosphor-react'
+import { apiGetProduct } from '../utils/api'
+import { ArrowLeft, Trash } from 'phosphor-react'
 import Image from 'next/image'
 
 import emptyFav from '../public/empty_fav.png'
+import { addToCart } from '../store/cartReducer'
 import { deleteFromWishlist } from '../store/wishlistReducer'
 import Meta from '../components/meta/Meta';
 
-const WishlistItem = ({ item, onDelete }) => {
+const WishlistItem = ({ item, onDelete, onAddToCart, isInCart }) => {
 
     const router = useRouter()
+    const handleCartAction = () => {
+        if (isInCart) {
+            router.push('/cart')
+            return
+        }
+        onAddToCart(item)
+    }
 
     return (
         <Flex
@@ -63,7 +70,7 @@ const WishlistItem = ({ item, onDelete }) => {
                         fontSize={'md'}
                         textAlign={'start'}
                         textColor={'black'}>
-                        {`₦${new Intl.NumberFormat().format(item.productPrice)}`}
+                        {`KSh ${new Intl.NumberFormat().format(item.productPrice)}`}
                     </Text>
 
                 </VStack>
@@ -74,6 +81,16 @@ const WishlistItem = ({ item, onDelete }) => {
                 justifyContent={'space-between'}
                 spacing={3}
                 display={{ base: 'none', md: 'flex' }}>
+
+                <Button
+                    variant={isInCart ? 'outline' : 'solid'}
+                    textTransform={'uppercase'}
+                    letterSpacing={'wide'}
+                    paddingX={4}
+                    fontSize={'sm'}
+                    onClick={handleCartAction}>
+                    {isInCart ? 'View cart' : 'Add to cart'}
+                </Button>
 
                 <Button
                     variant={'solid'}
@@ -109,6 +126,16 @@ const WishlistItem = ({ item, onDelete }) => {
                 flexDirection={{ base: 'row-reverse' }}>
 
                 <Button
+                    variant={isInCart ? 'outline' : 'solid'}
+                    textTransform={'uppercase'}
+                    letterSpacing={'wide'}
+                    paddingX={4}
+                    fontSize={'sm'}
+                    onClick={handleCartAction}>
+                    {isInCart ? 'View cart' : 'Add to cart'}
+                </Button>
+
+                <Button
                     variant={'solid'}
                     marginTop={6}
                     textTransform={'uppercase'}
@@ -138,30 +165,25 @@ const WishlistItem = ({ item, onDelete }) => {
 const Wishlist = ({ addToCart, deleteFromWishlist }) => {
 
     const router = useRouter()
-    const wishlist = useSelector((state) => state.persistFirebase.profile.wishlist)
-    const cart = useSelector((state) => state.persistFirebase.profile.cart)
-    const hasNotAuth = useSelector((state) => state.persistFirebase.auth.isEmpty)
+    const wishlist = useSelector((state) => state.auth.profile.wishlist)
+    const cart = useSelector((state) => state.auth.profile.cart)
+    const cartItems = cart?.items || {}
     const [product, setProduct] = useState([])
-    const firestore = firebase.firestore()
 
     useEffect(() => {
-        if (hasNotAuth) {
-            router.replace('/signup')
-            return
-        }
         let productIds = wishlist ? wishlist : []
         let tempWishlist = []
         const getWishlistItem = async () => {
             await Promise.all(productIds.map(async (id) => {
-                const docRef = doc(firestore, `products/${id}`)
-                const docSnap = await getDoc(docRef)
-                if (docSnap.exists)
-                    tempWishlist.push({ pid: id, ...docSnap.data() })
+                try {
+                    const p = await apiGetProduct(id)
+                    tempWishlist.push(p)
+                } catch (e) { /* skip missing */ }
             }))
             setProduct(tempWishlist)
         }
         getWishlistItem()
-    }, [hasNotAuth])
+    }, [wishlist])
 
     function deleteItem(id) {
         deleteFromWishlist(id, wishlist)
@@ -169,7 +191,11 @@ const Wishlist = ({ addToCart, deleteFromWishlist }) => {
         setProduct(newList)
     }
 
-    if (hasNotAuth) return null // don't render any UI since auth state has not been verified
+    const handleAddToCart = (item) => {
+        const colorName = Array.isArray(item.color) && item.color.length ? item.color[0] : ''
+        const colorValue = Array.isArray(item.colorValue) && item.colorValue.length ? item.colorValue[0] : ''
+        addToCart(item.pid, item.productPrice, colorName, colorValue, cart)
+    }
 
     return (
         <>
@@ -180,7 +206,7 @@ const Wishlist = ({ addToCart, deleteFromWishlist }) => {
                     justifyContent={'center'}
                     alignItems={'center'}
                     flexDirection={'column'}>
-                    <Meta title={'Wishlist | Fobath Woodwork'} />
+                    <Meta title={'Wishlist | Kejalux Interiors'} />
                     <Circle
                         bgColor={'gray.200'}
                         size={'140px'}>
@@ -221,7 +247,7 @@ const Wishlist = ({ addToCart, deleteFromWishlist }) => {
                     paddingY={{ base: 4, md: 8 }}
                     backgroundColor={'gray.50'}
                     flexDirection={{ base: 'column', lg: 'row' }}>
-                    <Meta title={'Wishlist | Fobath Woodwork'} />
+                    <Meta title={'Wishlist | Kejalux Interiors'} />
                     <ToastContainer />
 
                     <VStack
@@ -233,22 +259,38 @@ const Wishlist = ({ addToCart, deleteFromWishlist }) => {
                         width={{ base: '100%', lg: '45%' }}>
 
                         <HStack
-                            alignItems={'baseline'}
+                            alignItems={'center'}
                             justifyContent={'space-between'}
                             w={'full'}>
-                            <Text
-                                fontWeight={'bold'}
-                                fontSize={{ base: 'xl', lg: '2xl' }}
-                                textColor={'black'}>
-                                Your Wishlist
-                            </Text>
+                            <HStack spacing={3} alignItems={'center'}>
+                                <IconButton
+                                    aria-label={'Go back'}
+                                    variant={'ghost'}
+                                    icon={<ArrowLeft size={18} />}
+                                    onClick={() => router.back()}
+                                />
+                                <Text
+                                    fontWeight={'bold'}
+                                    fontSize={{ base: 'xl', lg: '2xl' }}
+                                    textColor={'black'}>
+                                    Your Wishlist
+                                </Text>
+                            </HStack>
 
-                            <Text
-                                fontWeight={'semibold'}
-                                fontSize={'xs'}
-                                textColor={'gray.500'}>
-                                {`${wishlist ? wishlist.length : 'No'} items in wishlist`}
-                            </Text>
+                            <HStack spacing={3} alignItems={'center'}>
+                                <Text
+                                    fontWeight={'semibold'}
+                                    fontSize={'xs'}
+                                    textColor={'gray.500'}>
+                                    {`${wishlist ? wishlist.length : 'No'} items in wishlist`}
+                                </Text>
+                                <Button
+                                    size={'sm'}
+                                    variant={'outline'}
+                                    onClick={() => router.push('/cart')}>
+                                    View cart
+                                </Button>
+                            </HStack>
                         </HStack>
 
                         {
@@ -259,6 +301,8 @@ const Wishlist = ({ addToCart, deleteFromWishlist }) => {
                                     <WishlistItem
                                         item={p}
                                         onDelete={deleteItem}
+                                        onAddToCart={handleAddToCart}
+                                        isInCart={Boolean(cartItems?.[p.pid])}
                                     />
                                     {
                                         i !== product.length - 1 &&
@@ -276,6 +320,8 @@ const Wishlist = ({ addToCart, deleteFromWishlist }) => {
 
 export const matchDispatchToProps = dispatch => {
     return {
+        addToCart: (productId, productPrice, colorName, colorValue, prevCart) =>
+            dispatch(addToCart(productId, productPrice, colorName, colorValue, prevCart)),
         deleteFromWishlist: (productId, wishlist) =>
             dispatch(deleteFromWishlist(productId, wishlist))
     }

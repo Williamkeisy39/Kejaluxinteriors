@@ -1,14 +1,25 @@
 import { Badge, Box, Button, Circle, Flex, Grid, Skeleton, Tab, TabList, TabPanel, TabPanels, Tabs, Text, VStack } from '@chakra-ui/react'
+import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import { connect, useSelector } from 'react-redux'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.min.css'
+import { motion } from 'framer-motion'
 
 import noProduct from '../../public/no_product.png'
 
-import { getProductsBySubCategory } from '../../store/productsReducer'
+import { getAllProducts, getProducts } from '../../store/productsReducer'
+
+const sectionReveal = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.8, ease: 'easeOut' }
+    }
+}
 
 const LoadingSkeleton = () => {
     return (
@@ -112,7 +123,7 @@ const FeaturedItem = ({ productId, productName, productPrice,
                 textColor={'gray.900'}
                 paddingStart={2}
                 paddingBottom={2}>
-                {`₦${new Intl.NumberFormat().format(productPrice)}`}
+                {`KSh ${new Intl.NumberFormat().format(productPrice)}`}
             </Text>
 
             <Button
@@ -144,7 +155,9 @@ const ProductCollection = ({ productState }) => {
 
     if (isFetching) return <LoadingSkeleton />
 
-    if (isLoaded && Object.values(data).length === 0) {
+    const safeData = data || {}
+
+    if (isLoaded && Object.values(safeData).length === 0) {
         return (
             <VStack
                 width={'full'}
@@ -196,7 +209,7 @@ const ProductCollection = ({ productState }) => {
             marginTop={8}>
 
             {
-                Object.values(data).map((product, index) => (
+                Object.values(safeData).map((product, index) => (
                     <FeaturedItem
                         key={index}
                         productId={product.pid}
@@ -211,35 +224,31 @@ const ProductCollection = ({ productState }) => {
     )
 }
 
-const Featured = ({ getProductsBySubCategory }) => {
-    const subCategory = ['Trending', 'Featured', 'On Sale', 'New Arrival']
+const Featured = ({ getAllProducts, getProducts }) => {
+    const categories = ['All', 'Sofa', 'Bed', 'Wardrobe', 'Office']
 
     const productState = useSelector((state) => state.products)
 
-    const fetchSubCategory = (index) => {
-        switch (index) {
-            case 0:
-                getProductsBySubCategory(subCategory[index].toLowerCase())
-                break
-            case 1:
-                getProductsBySubCategory(subCategory[index].toLowerCase())
-                break
-            case 2:
-                getProductsBySubCategory(subCategory[index].toLowerCase())
-                break
-            case 3:
-                getProductsBySubCategory(subCategory[index].toLowerCase())
-                break
+    const fetchCategory = (index) => {
+        if (index === 0) {
+            getAllProducts()
+            return
         }
+        const category = categories[index]?.toLowerCase()
+        if (category) getProducts(category, {}, 1)
     }
 
     useEffect(() => {
-        fetchSubCategory(0)
+        fetchCategory(0)
     }, [])
 
     return (
         <Flex
-            as={'section'}
+            as={motion.section}
+            variants={sectionReveal}
+            initial={'hidden'}
+            whileInView={'visible'}
+            viewport={{ once: true, amount: 0.2 }}
             paddingX={{ base: 0, lg: 12 }}
             paddingY={{ base: 8, lg: 16 }}
             flexDirection={'column'}
@@ -265,24 +274,34 @@ const Featured = ({ getProductsBySubCategory }) => {
                 Discover varieties of selected amazing products collection
             </Text>
 
+            <Link href={'/products'}>
+                <Button
+                    mt={4}
+                    variant={'outline'}
+                    borderColor={'gray.300'}
+                    _hover={{ borderColor: 'gold.500', color: 'gold.600' }}>
+                    View All Products
+                </Button>
+            </Link>
+
             <Tabs
                 align={'center'}
                 marginTop={4}
                 colorScheme={'orange'}
                 variant={{base: 'line', md: 'soft-rounded'}}
                 size={{base: 'sm', md: 'md'}}
-                onChange={(index) => fetchSubCategory(index)}>
+                onChange={(index) => fetchCategory(index)}>
                 <TabList
                     paddingX={{ base: 6, lg: 0 }}>
                     {
-                        subCategory.map((item, index) =>
+                        categories.map((item, index) =>
                             <Tab key={index}>{item}</Tab>
                         )
                     }
                 </TabList>
                 <TabPanels>
                     {
-                        subCategory.map((item, index) =>
+                        categories.map((item, index) =>
                             <TabPanel key={index}>
                                 <ProductCollection
                                     productState={productState}
@@ -298,8 +317,10 @@ const Featured = ({ getProductsBySubCategory }) => {
 
 export const matchDispatchToProps = dispatch => {
     return {
-        getProductsBySubCategory: (subCategory) =>
-            dispatch(getProductsBySubCategory(subCategory))
+        getAllProducts: (page) =>
+            dispatch(getAllProducts(page)),
+        getProducts: (category, prevData, page) =>
+            dispatch(getProducts(category, prevData, page))
     }
 }
 

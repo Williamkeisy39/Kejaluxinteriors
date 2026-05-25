@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Footer from './footer/Footer'
 import Meta from './meta/Meta'
 import Navbar from './nav/Navbar'
+import WhatsAppFloat from './WhatsAppFloat'
 
 const Layout = ({ children }) => {
     const router = useRouter()
@@ -33,6 +34,8 @@ const Layout = ({ children }) => {
                     <Footer />
                 </Box>
             }
+
+            <WhatsAppFloat />
         </>
     )
 }

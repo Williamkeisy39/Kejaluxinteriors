@@ -1,11 +1,9 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
-import { firebaseReducer, getFirebase } from 'react-redux-firebase'
-import { firestoreReducer } from 'redux-firestore'
-import thunk from 'redux-thunk'
 import storage from 'redux-persist/lib/storage'
 import persistReducer from 'redux-persist/lib/persistReducer';
 import persistStore from 'redux-persist/lib/persistStore';
 
+import authReducer from './authReducer';
 import productsReducer from './productsReducer';
 import productReducer from './productReducer';
 import cartReducer from './cartReducer';
@@ -13,31 +11,29 @@ import wishlistReducer from './wishlistReducer';
 import orderReducer from './orderReducer';
 import addProductReducer from './addProductReducer';
 import searchReducer from './searchReducer';
-import logoutReducer from './logoutReducer';
 
-const persistFirebaseAuthConfig = {
-    key: 'user',
+const persistAuthConfig = {
+    key: 'auth',
     storage,
-    whitelist: ['auth', 'profile']
+    whitelist: ['uid', 'email', 'displayName', 'isEmpty', 'isLoaded', 'profile']
 }
 
-const persistFirebaseReducer = persistReducer(persistFirebaseAuthConfig, firebaseReducer)
+const persistedAuthReducer = persistReducer(persistAuthConfig, authReducer)
 
 const combinedReducers = combineReducers({
-    persistFirebase: persistFirebaseReducer,
-    firestore: firestoreReducer,
+    auth: persistedAuthReducer,
     products: productsReducer,
     product: productReducer,
     cart: cartReducer,
     order: orderReducer,
     addProduct: addProductReducer,
     wishlist: wishlistReducer,
-    search: searchReducer,
-    logout: logoutReducer
+    search: searchReducer
 })
 
 const rootReducer = (state, action) => {
-    if (action.type === 'app/logout') {
+    if (action.type === 'auth/clearUser') {
+        storage.removeItem('persist:auth')
         state = undefined
     }
     return combinedReducers(state, action)
@@ -45,7 +41,8 @@ const rootReducer = (state, action) => {
 
 export const store = configureStore({
     reducer: rootReducer,
-    middleware: [thunk.withExtraArgument({ getFirebase })]
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({ serializableCheck: false })
 })
 
 export const persistor = persistStore(store)

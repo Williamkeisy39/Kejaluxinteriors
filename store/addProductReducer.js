@@ -1,9 +1,6 @@
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { addDoc, collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore'
-import firebase from 'firebase/compat/app'
-
 import { createSlice } from '@reduxjs/toolkit'
 import { toast } from 'react-toastify'
+import { apiAddProduct } from '../utils/api'
 
 const dataState = {
     isLoading: true,
@@ -28,104 +25,40 @@ export const { addProduct } = addProductSlice.actions
 
 export default addProductSlice.reducer
 
-const uploadImage = async (category, images, prodRef, db) => {
-    const storage = getStorage()
-    const productImages = []
-
-    images.forEach(image => {
-        const productImageRef = ref(storage, `${category}/${image.name}`)
-        uploadBytes(productImageRef, image).then(() => {
-            getDownloadURL(productImageRef).then(url => {
-                productImages.push(url)
-                db.collection('products').doc(prodRef)
-                    .update({ images: productImages })
-            })
-        })
-    })
-
-
-    return productImages
-}
-
 export const addNewProduct = (product, changeLoadState) => {
-    return async (dispatch, getState, { getFirebase }) => {
-        const firestore = getFirebase().firestore()
-        const prodImgs = product.images
-        const modProduct = { ...product, images: [] }
+    return async (dispatch) => {
+        try {
+            const formData = new FormData()
+            formData.append('productName', product.productName)
+            formData.append('productPrice', product.productPrice)
+            formData.append('category', product.category)
+            formData.append('subcategory', JSON.stringify(product.subcategory))
+            formData.append('color', JSON.stringify(product.color))
+            formData.append('colorValue', JSON.stringify(product.colorValue))
+            formData.append('width', product.width)
+            formData.append('length', product.length)
+            formData.append('height', product.height)
+            formData.append('desc', product.desc)
 
-        firestore.collection('products').add(modProduct)
-            .then(async (docRef) => {
-                await uploadImage(product.category, prodImgs, docRef.id, firestore)
-                await updateInvertedIndex(firestore, docRef.id,
-                    modProduct.productName, modProduct.color, modProduct.desc)
-                dispatch(addProduct({
-                    ...dataState,
-                    isLoading: false,
-                    isLoaded: true,
-                    data: docRef.id
-                }))
-                changeLoadState()
+            product.images.forEach((img) => {
+                if (img) formData.append('images', img)
             })
-            .catch((e) => {
-                dispatch(addProduct({
-                    ...dataState,
-                    isLoading: false,
-                    isLoaded: true,
-                    error: e
-                }))
-            });
-    }
-}
 
-const isStopWord = (term) => {
-    const stopWords = [
-        'a', 'an', 'and', 'are', 'about', 'as', 'at', 'again', 'against',
-        'be', 'by', 'during', 'for',
-        'from', 'how', 'has', 'he', 'in', 'is', 'it', 'its', 'made',
-        'of', 'on', 'that', 'the', 'to', 'very', 'was', 'were', 'who', 'when',
-        'what', 'where', 'will', 'with', 'your'
-    ]
-
-    return stopWords.includes(term)
-}
-
-const updateInvertedIndex = async (db, productId, productName, productColor, productDesc) => {
-    var lemmatizer = require( 'wink-lemmatizer' );
-
-    // CLEAN - REMOVE PUNCTUATIONS
-    const modProductName = productName.trim().replace(/[\W_]+/g, ' ')
-    const modProductDesc = productDesc.trim().replace(/[\W_]+/g, ' ')
-
-    // TOKENIZATION
-    const tokenizeName = modProductName.split(' ')
-    const tokenizeDesc = modProductDesc.split(' ')
-
-    const terms = tokenizeName.concat(tokenizeDesc).concat(productColor)
-
-    //  REMOVE STOP WORDS AND PERFORM LEMMATIZATION
-    const uniqueTerms = new Set()
-    terms.forEach(term => !isStopWord(term.toLowerCase()) &&
-        uniqueTerms.add(lemmatizer.noun(term.toLowerCase())))
-
-    const termRef = collection(db, 'index')
-
-    await Promise.all(Array.from(uniqueTerms).map(async (term) => {
-        const termQuery = query(termRef, where('term', '==', term))
-        const termQuerySnapshot = await getDocs(termQuery)
-
-        if (!termQuerySnapshot.empty) {
-            termQuerySnapshot.forEach(async termDoc => {
-                const termDocRef = doc(db, 'index', termDoc.id)
-                await updateDoc(termDocRef, {
-                    docIDs: firebase.firestore.FieldValue.arrayUnion(productId)
-                })
-            })
-        } else {
-            await addDoc(collection(db, 'index'), {
-                term,
-                docIDs: [productId] // docIDs is the postings list
-            })
+            const result = await apiAddProduct(formData)
+            dispatch(addProduct({
+                ...dataState,
+                isLoading: false,
+                isLoaded: true,
+                data: result.pid
+            }))
+            changeLoadState()
+        } catch (e) {
+            dispatch(addProduct({
+                ...dataState,
+                isLoading: false,
+                isLoaded: true,
+                error: e.message
+            }))
         }
-    }))
-
+    }
 }

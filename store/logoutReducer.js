@@ -1,25 +1,9 @@
-import { createSlice } from '@reduxjs/toolkit';
+// This file is kept for backwards compatibility.
+// Logout is now handled via authReducer.
+import { logoutUser } from './authReducer';
 
-import storage from 'redux-persist/lib/storage'
+export const signOut = logoutUser;
 
-const logOutSlice = createSlice({
-    name: 'app',
-    initialState: {},
-    reducers: {
-        logOut: (state, action) => {
-            return action.payload
-        }
-    }
-})
-
-export const { logOut } = logOutSlice.actions
-export default logOutSlice.reducer
-
-export const signOut = () => {
-    return async (dispatch, getState, { getFirebase }) => {
-        storage.removeItem('persist:user')
-        localStorage.removeItem('PRODUCT_REF')
-        getFirebase().logout()
-        dispatch(logOut({success: true}))
-    }
+export default function logoutReducer(state = { isLoggedOut: false }) {
+    return state;
 }

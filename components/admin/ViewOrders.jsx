@@ -42,8 +42,8 @@ const ViewOrders = ({ getAllOrders, updateOrder }) => {
                                     <Td>{item.fullname}</Td>
                                     <Td>{item.email}</Td>
                                     <Td>{item.phone}</Td>
-                                    <Td>{item.date.toDate().toDateString().replace(' ', ', ')}</Td>
-                                    <Td>{`₦${new Intl.NumberFormat().format(item.totalPrice)}`}</Td>
+                                    <Td>{new Date(item.date).toDateString().replace(' ', ', ')}</Td>
+                                    <Td>{`KSh ${new Intl.NumberFormat().format(item.totalPrice)}`}</Td>
                                     <Td color={'gold.500'}>{item.status}</Td>
                                     <Td>
                                         <Menu>

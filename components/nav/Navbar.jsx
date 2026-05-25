@@ -2,17 +2,17 @@ import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPane
 import { useRouter } from 'next/router'
 import { Link as NextLink } from 'next/link'
 import Image from 'next/image'
-import { AngularLogo, List, MagnifyingGlass, ShoppingCart, SignOut, User } from 'phosphor-react'
+import { Heart, List, MagnifyingGlass, ShoppingCart, SignOut, User } from 'phosphor-react'
 import { useEffect, useRef, useState } from 'react'
 import { connect, useDispatch, useSelector } from 'react-redux'
-import { signOut } from '../../store/logoutReducer'
+import { logoutUser } from '../../store/authReducer'
 
 import { searchProducts } from '../../store/searchReducer'
 
 const Navbar = ({ search }) => {
     const router = useRouter()
-    const auth = useSelector(state => state.persistFirebase.profile)
-    const cart = useSelector((state) => state.persistFirebase.profile.cart)
+    const auth = useSelector(state => state.auth.profile)
+    const cart = useSelector((state) => state.auth.profile.cart)
     const dispatch = useDispatch()
     const { isOpen, onOpen, onClose } = useDisclosure()
     const menuRef = useRef()
@@ -26,31 +26,39 @@ const Navbar = ({ search }) => {
         <Flex
             as={'nav'}
             paddingX={{ base: 6, lg: 12 }}
-            paddingY={4}
+            paddingY={{ base: 0.5, lg: 0.5 }}
             boxShadow={'sm'}
-            flexDirection={'column'}>
+            flexDirection={'column'}
+            position={'relative'}>
             <Flex
                 justifyContent={'space-between'}
                 alignItems={'center'}>
 
-                <Text
-                    fontWeight={'semibold'}
-                    fontSize={{ base: 'sm', md: 'md' }}
-                    letterSpacing={'widest'}
-                    textColor={'black'}
-                    textTransform={'uppercase'}
-                    transition={'all .4s'}
-                    onClick={() => router.replace('/')}
-                    _hover={{ cursor: 'pointer', color: 'gold.500' }}>
-                    urban interiors
-                </Text>
+                <Link
+                    as={NextLink}
+                    href={'/'}
+                    _hover={{ textDecoration: 'none' }}>
+                    <Box
+                        w={{ base: '120px', md: '170px' }}
+                        h={{ base: '52px', md: '72px' }}
+                        position={'relative'}
+                        flexShrink={0}>
+                        <Image
+                            src={'/kj.png'}
+                            alt={'Kejalux logo'}
+                            fill
+                            style={{ objectFit: 'contain' }}
+                        />
+                    </Box>
+                </Link>
 
                 <InputGroup
-                    size={'lg'}
-                    width={'40%'}
+                    size={'md'}
+                    width={'42%'}
                     m={'auto'}
                     position={'absolute'}
-                    top={3}
+                    top={'50%'}
+                    transform={'translateY(-50%)'}
                     left={0}
                     right={0}
                     display={{ base: 'none', lg: 'block' }}>
@@ -187,24 +195,24 @@ const Navbar = ({ search }) => {
                             :
                             <>
                                 <IconButton
-                                    aria-label={'shopping cart'}
+                                    aria-label={'wishlist'}
                                     bg={'gold.100'}
                                     color={'black'}
                                     variant={'ghost'}
                                     icon={
                                         <Tooltip
                                             hasArrow
-                                            label={'Admin'}
+                                            label={'Wishlist'}
                                             placement={'bottom'}
                                             textColor={'white'}
                                             bgColor={'gray.900'}>
-                                            <AngularLogo size={24} weight={'regular'} />
+                                            <Heart size={24} weight={'regular'} />
                                         </Tooltip>
                                     }
                                     _hover={{
                                         color: 'gold.500'
                                     }}
-                                    onClick={() => router.push('/admin')} />
+                                    onClick={() => router.push('/wishlist')} />
 
                                 <IconButton
                                     aria-label={'account'}
@@ -278,7 +286,7 @@ const Navbar = ({ search }) => {
                     <DrawerOverlay />
                     <DrawerContent>
                         <DrawerCloseButton />
-                        <DrawerHeader>Urban Interiors</DrawerHeader>
+                        <DrawerHeader>Kejalux Interiors</DrawerHeader>
 
                         <DrawerBody>
                             {
@@ -362,13 +370,13 @@ const Navbar = ({ search }) => {
                                                         </Link>
                                                         <Link
                                                             as={NextLink}
-                                                            href={'/shoe-rack'}>
-                                                            Shoe Rack
+                                                            href={'/outdoor'}>
+                                                            Outdoor
                                                         </Link>
                                                         <Link
                                                             as={NextLink}
-                                                            href={'/ward-robe'}>
-                                                            Ward Robe
+                                                            href={'/wardrobe'}>
+                                                            Wardrobe
                                                         </Link>
                                                         <Link
                                                             as={NextLink}
@@ -382,8 +390,8 @@ const Navbar = ({ search }) => {
                                                         </Link>
                                                         <Link
                                                             as={NextLink}
-                                                            href={'/table-and-chair'}>
-                                                            Table and chair
+                                                            href={'/office'}>
+                                                            Office
                                                         </Link>
                                                     </VStack>
                                                 </AccordionPanel>
@@ -446,7 +454,7 @@ const Navbar = ({ search }) => {
                                                         textTransform={'uppercase'}
                                                         leftIcon={<SignOut size={24} />}
                                                         onClick={() => {
-                                                            dispatch(signOut())
+                                                            dispatch(logoutUser())
                                                             router.replace('/')
                                                         }}>
                                                         logout

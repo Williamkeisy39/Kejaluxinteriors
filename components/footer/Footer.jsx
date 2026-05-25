@@ -1,10 +1,11 @@
-import { Divider, Flex, Grid, HStack, Icon, IconButton, Stack, Text, VStack } from '@chakra-ui/react';
+import { Divider, Flex, Grid, HStack, Icon, IconButton, Stack, Text, VStack, Box } from '@chakra-ui/react';
 import Link from 'next/link'
-import { At, InstagramLogo, MapPinLine, TwitterLogo, WhatsappLogo } from 'phosphor-react';
+import { At, InstagramLogo, MapPinLine, WhatsappLogo } from 'phosphor-react';
 import { useSelector } from 'react-redux';
+import Image from 'next/image'
 
 const Footer = () => {
-    const auth = useSelector(state => state.persistFirebase.profile)
+    const auth = useSelector(state => state.auth.profile)
 
     return (
         <Flex
@@ -23,13 +24,17 @@ const Footer = () => {
                     justifyContent={'space-between'}
                     alignItems={{base: 'center', lg: 'start'}}
                     flexGrow={1}>
-                    <Text
-                        fontWeight={'black'}
-                        fontSize={{base: 'xl', lg: '3xl'}}
-                        textColor={'white'}
-                        textTransform={'capitalize'}>
-                        urban interiors
-                    </Text>
+                    <Box
+                        boxSize={{ base: '90px', lg: '110px' }}
+                        position={'relative'}
+                        flexShrink={0}>
+                        <Image
+                            src={'/kj2.png'}
+                            alt={'Kejalux logo'}
+                            fill
+                            style={{ objectFit: 'contain' }}
+                        />
+                    </Box>
 
                     <Text
                         fontWeight={'light'}
@@ -38,8 +43,7 @@ const Footer = () => {
                         maxWidth={'md'}
                         mt={5}
                         textAlign={{base: 'center', lg: 'start'}}>
-                        Urban interiors is a company that specializes in creating high-quality, handcrafted household furniture.
-                        We also offer assembly services for IKEA products, ensuring that customers can enjoy their new furniture quickly and easily.
+                        Kejalux Interiors is your premier destination for quality interior decor, business furniture, outdoor pallet furniture, and custom-made furniture solutions. We transform spaces with style and functionality.
                     </Text>
 
                 </Flex>
@@ -69,7 +73,7 @@ const Footer = () => {
                         </Text>
 
                     </Link>
-                    <Link href={'/'}>
+                    <Link href={'/privacy-policy'}>
                         <Text
                             color={'white'}
                             fontWeight={'normal'}
@@ -80,10 +84,10 @@ const Footer = () => {
                                 transition: 'all .4s',
                                 transform: 'translateX(6px)'
                             }}>
-                            About Us
+                            Privacy Policy
                         </Text>
                     </Link>
-                    <Link href={'/'}>
+                    <Link href={'/terms'}>
                         <Text
                             color={'white'}
                             fontWeight={'normal'}
@@ -95,6 +99,20 @@ const Footer = () => {
                                 transform: 'translateX(6px)'
                             }}>
                             Terms and Conditions
+                        </Text>
+                    </Link>
+                    <Link href={'/blog'}>
+                        <Text
+                            color={'white'}
+                            fontWeight={'normal'}
+                            fontSize={'sm'}
+                            transition={'all 0.4s ease 0s'}
+                            _hover={{
+                                color: 'gold.500',
+                                transition: 'all .4s',
+                                transform: 'translateX(6px)'
+                            }}>
+                            Blog
                         </Text>
                     </Link>
                 </VStack>
@@ -194,7 +212,7 @@ const Footer = () => {
                             color={'white'}
                             fontWeight={'normal'}
                             fontSize={'sm'}>
-                            Lagos, Nigeria
+                            Nairobi, Kenya
                         </Text>
                     </HStack>
                     <HStack>
@@ -208,7 +226,7 @@ const Footer = () => {
                             color={'white'}
                             fontWeight={'normal'}
                             fontSize={'sm'}>
-                            +2349123456789
+                            +254782223749
                         </Text>
                     </HStack>
                     <HStack>
@@ -222,7 +240,7 @@ const Footer = () => {
                             color={'white'}
                             fontWeight={'normal'}
                             fontSize={'sm'}>
-                            urbaninteriors@mail.com
+                            info@kejalux.com
                         </Text>
                     </HStack>
 
@@ -231,21 +249,21 @@ const Footer = () => {
                         spacing={4}>
 
                         <Link
-                            href={'https://twitter.com/Fobath_woodwork'} target={'_blank'}>
+                            href={'https://wa.me/254782223749'} target={'_blank'}>
                             <IconButton
-                                aria-label={'twitter social button'}
+                                aria-label={'whatsapp button'}
                                 color={'white'}
                                 bgColor={'whiteAlpha.200'}
                                 variant={'ghost'}
                                 icon={
-                                    <TwitterLogo size={24} weight={'fill'} alt={'Twitter'} />
+                                    <WhatsappLogo size={24} weight={'fill'} alt={'WhatsApp'} />
                                 }
                                 _hover={{
                                     color: 'gold.500'
                                 }}
                             />
                         </Link>
-                        <Link href={'https://www.instagram.com/fobath_woodwork/'} target={'_blank'}>
+                        <Link href={'https://www.instagram.com/kejaluxinteriors/'} target={'_blank'}>
                             <IconButton
                                 aria-label={'instagram social button'}
                                 color={'white'}
@@ -271,7 +289,7 @@ const Footer = () => {
                 fontWeight={'light'}
                 textAlign={'center'}
                 fontSize={'sm'}>
-                Copyright &copy; 2023, All Rights Reserved
+                Copyright &copy; 2025 Kejalux Interiors. All Rights Reserved
             </Text>
 
         </Flex>

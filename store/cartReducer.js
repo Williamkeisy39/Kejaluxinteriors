@@ -1,5 +1,26 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
+import { apiUpdateCart, apiClearCart } from "../utils/api";
+import { updateProfile } from "./authReducer";
+
+const guestCartKey = 'guest_cart'
+const emptyCart = { totalItems: 0, totalPrice: 0, items: {} }
+
+const getGuestCart = () => {
+    if (typeof window === 'undefined') return emptyCart
+    try {
+        const stored = localStorage.getItem(guestCartKey)
+        return stored ? JSON.parse(stored) : emptyCart
+    } catch {
+        return emptyCart
+    }
+}
+
+const setGuestCart = (cart) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem(guestCartKey, JSON.stringify(cart))
+    }
+}
 
 export const cartSlice = createSlice({
     name: 'cart',
@@ -38,135 +59,98 @@ export const
 
 export default cartSlice.reducer
 
+const syncCart = async (dispatch, newCart) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (token) {
+        try {
+            await apiUpdateCart(newCart)
+        } catch {
+            setGuestCart(newCart)
+        }
+    } else {
+        setGuestCart(newCart)
+    }
+    dispatch(updateProfile({ cart: newCart }))
+}
+
 export const addToCart = (productId, productPrice, colorName, colorValue, cart) => {
-    return async (dispatch, getState, { getFirebase }) => {
-        if (Object.keys(cart.items).includes(productId)) {
-            dispatch(addItemToCart(
-                {
-                    info: 'FAIL'
-                }
-            ))
+    return async (dispatch) => {
+        const items = cart.items || {}
+        if (Object.keys(items).includes(productId)) {
+            dispatch(addItemToCart({ info: 'FAIL' }))
             return
         }
-        const firestore = getFirebase().firestore()
-        const userId = getState().persistFirebase.auth.uid
-        firestore
-            .collection('users')
-            .doc(userId)
-            .update({
-                'cart': {
-                    totalItems: Number(cart.totalItems) + 1,
-                    totalPrice: Number(cart.totalPrice) + Number(productPrice),
-                    items: {
-                        ...cart.items,
-                        [`${productId}`]: {
-                            quantity: 1,
-                            color: { 
-                                name: colorName,
-                                value: colorValue
-                            }
-                        }
-                    }
+        const newCart = {
+            totalItems: Number(cart.totalItems) + 1,
+            totalPrice: Number(cart.totalPrice) + Number(productPrice),
+            items: {
+                ...items,
+                [productId]: {
+                    quantity: 1,
+                    color: { name: colorName, value: colorValue }
                 }
-            }).then(() => {
-                dispatch(addItemToCart({
-                    info: 'ADD'
-                }))
-            })
+            }
+        }
+        await syncCart(dispatch, newCart)
+        dispatch(addItemToCart({ info: 'ADD' }))
     }
 }
 
 export const increaseQuantity = (productId, productPrice, cart) => {
-    let cartProduct = cart.items[productId]
-    let newCartItem = {
-        ...cartProduct,
-        quantity: cartProduct.quantity + 1
-    }
-
-    cart.items = { ...cart.items, [productId]: newCartItem }
-    return async (dispatch, getState, { getFirebase }) => {
-        const firestore = getFirebase().firestore()
-        const userId = getState().persistFirebase.auth.uid
-        firestore
-            .collection('users')
-            .doc(userId)
-            .update({
-                'cart': {
-                    totalItems: Number(cart.totalItems) + 1,
-                    totalPrice: Number(cart.totalPrice) + Number(productPrice),
-                    items: cart.items
-                }
-            }).then(() => {
-                dispatch(increaseItemQuantity())
-            })
+    const items = { ...cart.items }
+    items[productId] = { ...items[productId], quantity: items[productId].quantity + 1 }
+    return async (dispatch) => {
+        const newCart = {
+            totalItems: Number(cart.totalItems) + 1,
+            totalPrice: Number(cart.totalPrice) + Number(productPrice),
+            items
+        }
+        await syncCart(dispatch, newCart)
+        dispatch(increaseItemQuantity())
     }
 }
 
 export const decreaseQuantity = (productId, productPrice, cart) => {
-    let cartProduct = cart.items[productId]
-    let newCartItem = {
-        ...cartProduct,
-        quantity: cartProduct.quantity - 1
-    }
-
-    cart.items = { ...cart.items, [productId]: newCartItem }
-    return async (dispatch, getState, { getFirebase }) => {
-        const firestore = getFirebase().firestore()
-        const userId = getState().persistFirebase.auth.uid
-        firestore
-            .collection('users')
-            .doc(userId)
-            .update({
-                'cart': {
-                    totalItems: Number(cart.totalItems) - 1,
-                    totalPrice: Number(cart.totalPrice) - Number(productPrice),
-                    items: cart.items
-                }
-            }).then(() => {
-                dispatch(decreaseItemQuantity())
-            })
+    const items = { ...cart.items }
+    items[productId] = { ...items[productId], quantity: items[productId].quantity - 1 }
+    return async (dispatch) => {
+        const newCart = {
+            totalItems: Number(cart.totalItems) - 1,
+            totalPrice: Number(cart.totalPrice) - Number(productPrice),
+            items
+        }
+        await syncCart(dispatch, newCart)
+        dispatch(decreaseItemQuantity())
     }
 }
 
 export const deleteFromCart = (productId, productPrice, quantity, cart) => {
-    return async (dispatch, getState, { getFirebase }) => {
-        const firestore = getFirebase().firestore()
-        const userId = getState().persistFirebase.auth.uid
-        delete cart.items[productId]
-        firestore
-            .collection('users')
-            .doc(userId)
-            .update({
-                'cart': {
-                    totalItems: Number(cart.totalItems) - Number(quantity),
-                    totalPrice: Number(cart.totalPrice) - (Number(productPrice) * Number(quantity)),
-                    items: cart.items
-                }
-            }).then(() => {
-                dispatch(deleteItemFromCart({
-                    info: 'DELETE'
-                }))
-            })
+    return async (dispatch) => {
+        const items = { ...cart.items }
+        delete items[productId]
+        const newCart = {
+            totalItems: Number(cart.totalItems) - Number(quantity),
+            totalPrice: Number(cart.totalPrice) - (Number(productPrice) * Number(quantity)),
+            items
+        }
+        await syncCart(dispatch, newCart)
+        dispatch(deleteItemFromCart({ info: 'DELETE' }))
     }
 }
 
 export const deleteCart = () => {
-    return async (dispatch, getState, { getFirebase }) => {
-        const firestore = getFirebase().firestore()
-        const userId = getState().persistFirebase.auth.uid
-        firestore
-            .collection('users')
-            .doc(userId)
-            .update({
-                'cart': {
-                    totalItems: 0,
-                    totalPrice: 0,
-                    items: []
-                }
-            }).then(() => {
-                dispatch(clearCart({
-                    info: 'CLEAR'
-                }))
-            })
+    return async (dispatch) => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+        if (token) {
+            try {
+                await apiClearCart()
+            } catch {
+                // ignore API failures and fall back to local storage
+            }
+        }
+        const emptyCart = { totalItems: 0, totalPrice: 0, items: {} }
+        setGuestCart(emptyCart)
+        dispatch(updateProfile({ cart: emptyCart }))
+        dispatch(clearCart({ info: 'CLEAR' }))
     }
 }

@@ -11,7 +11,7 @@ import success from '../public/success.png'
 const SuccessPage = () => {
 
     const router = useRouter()
-    const hasNotAuth = useSelector((state) => state.persistFirebase.auth.isEmpty)
+    const hasNotAuth = useSelector((state) => state.auth.isEmpty)
 
     useEffect(() => {
         if (hasNotAuth) {
@@ -31,7 +31,7 @@ const SuccessPage = () => {
             paddingY={8}
             flexDirection={'column'}>
 
-            <Meta title={'Thank you | Fobath Woodwork'} />
+            <Meta title={'Thank you | Kejalux Interiors'} />
 
             <Confetti />
 
