@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../db');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/admin');
 
 const storage = multer.diskStorage({
     destination(req, file, cb) {
@@ -29,7 +30,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/banners — upload a new banner
-router.post('/', auth, upload.single('image'), async (req, res) => {
+router.post('/', auth, adminOnly, upload.single('image'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Image is required' });
         const image_url = `/uploads/banners/${req.file.filename}`;
@@ -43,7 +44,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 });
 
 // DELETE /api/banners/:id
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, adminOnly, async (req, res) => {
     try {
         const banner = await db('banners').where('id', req.params.id).first();
         if (!banner) return res.status(404).json({ message: 'Banner not found' });

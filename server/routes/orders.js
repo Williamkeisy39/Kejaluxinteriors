@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/admin');
 
 const rowToOrder = (r) => ({
     pid: r.id,
@@ -52,7 +53,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // GET /api/orders/all — admin: all orders
-router.get('/all', auth, async (req, res) => {
+router.get('/all', auth, adminOnly, async (req, res) => {
     try {
         const rows = await db('orders').orderBy('created_at', 'desc');
         res.json(rows.map(rowToOrder));
@@ -62,7 +63,7 @@ router.get('/all', auth, async (req, res) => {
 });
 
 // PATCH /api/orders/:id/status — admin: update status
-router.patch('/:id/status', auth, async (req, res) => {
+router.patch('/:id/status', auth, adminOnly, async (req, res) => {
     try {
         const { status } = req.body;
         await db('orders').where('id', req.params.id).update({ status });

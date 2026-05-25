@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/admin');
 
 // GET /api/settings/:key — get a setting by key
 router.get('/:key', async (req, res) => {
@@ -14,7 +15,7 @@ router.get('/:key', async (req, res) => {
 });
 
 // PUT /api/settings/:key — update a setting (admin only)
-router.put('/:key', auth, async (req, res) => {
+router.put('/:key', auth, adminOnly, async (req, res) => {
     try {
         const { value } = req.body;
         const exists = await db('settings').where('key', req.params.key).first();

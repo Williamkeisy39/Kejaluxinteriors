@@ -3,19 +3,32 @@ import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 
-const RequireAuth = ({ children, redirectTo = '/login', loaderText = 'Checking your account...' }) => {
+const RequireAuth = ({
+    children,
+    redirectTo = '/login',
+    loaderText = 'Checking your account...',
+    requireAdmin = false,
+    adminEmails = []
+}) => {
     const router = useRouter()
     const isAuthLoaded = useSelector((state) => state.auth.isLoaded)
     const isAuthEmpty = useSelector((state) => state.auth.isEmpty)
+    const userEmail = useSelector((state) => state.auth.email || state.auth.profile?.email)
+    const normalizedEmail = userEmail?.toLowerCase()
+    const isAdmin = !requireAdmin || (normalizedEmail && adminEmails.includes(normalizedEmail))
 
     useEffect(() => {
         if (!isAuthLoaded) return
-        if (isAuthEmpty) {
+        if (isAuthEmpty || !isAdmin) {
             router.replace(redirectTo)
         }
-    }, [isAuthEmpty, isAuthLoaded, redirectTo, router])
+    }, [isAuthEmpty, isAuthLoaded, isAdmin, redirectTo, router])
 
-    if (!isAuthLoaded || isAuthEmpty) {
+    const displayText = requireAdmin && isAuthLoaded && !isAuthEmpty && !isAdmin
+        ? 'Admin access only.'
+        : loaderText
+
+    if (!isAuthLoaded || isAuthEmpty || !isAdmin) {
         return (
             <Flex
                 position={'fixed'}
@@ -33,7 +46,7 @@ const RequireAuth = ({ children, redirectTo = '/login', loaderText = 'Checking y
                         Kejalux Interiors
                     </Text>
                     <Text fontSize={'sm'} color={'gray.600'}>
-                        {loaderText}
+                        {displayText}
                     </Text>
                     <Spinner color={'gold.500'} size={'lg'} />
                 </VStack>

@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../db');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/admin');
 
 // ── multer config ──
 const storage = multer.diskStorage({
@@ -137,7 +138,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/products  (admin – add product with images)
-router.post('/', auth, upload.array('images', 5), async (req, res) => {
+router.post('/', auth, adminOnly, upload.array('images', 5), async (req, res) => {
     try {
         const b = req.body;
         const images = (req.files || []).map((f) => `/uploads/${f.filename}`);
@@ -172,7 +173,7 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
 });
 
 // DELETE /api/products/:id
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, adminOnly, async (req, res) => {
     try {
         const deleted = await db('products').where('id', req.params.id).del();
         if (!deleted) return res.status(404).json({ message: 'Product not found' });

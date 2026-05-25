@@ -24,7 +24,8 @@ const authRouteConfig = {
   },
   '/admin': {
     redirectTo: '/login',
-    loaderText: 'Loading admin dashboard...'
+    loaderText: 'Loading admin dashboard...',
+    requireAdmin: true
   }
 }
 
@@ -39,6 +40,11 @@ function MyApp({ Component, pageProps }) {
   const router = useRouter()
   NProgress.configure({ showSpinner: true });
 
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAIL || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean)
+
   Router.events.on('routeChangeStart', () => {
     NProgress.start()
   });
@@ -49,7 +55,11 @@ function MyApp({ Component, pageProps }) {
 
   const authConfig = authRouteConfig[router.pathname]
   const pageContent = authConfig ? (
-    <RequireAuth redirectTo={authConfig.redirectTo} loaderText={authConfig.loaderText}>
+    <RequireAuth
+      redirectTo={authConfig.redirectTo}
+      loaderText={authConfig.loaderText}
+      requireAdmin={authConfig.requireAdmin}
+      adminEmails={adminEmails}>
       <Component {...pageProps} />
     </RequireAuth>
   ) : (
