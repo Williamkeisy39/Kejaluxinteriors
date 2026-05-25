@@ -1,11 +1,29 @@
 import { AspectRatio, Box, Button, Flex, HStack, Text, VStack } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 import interiorTwo from '../../public/interiorstwo.jpg';
 
-const VIDEO_SRC = '/kejalux-showreel.mp4';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const VIDEO_SRC = '';
+
+const defaultContent = {
+    title: 'Inside Kejalux Interiors',
+    subtitle: 'A quick look at our craftsmanship, custom builds, and styling process for homes and businesses.',
+    ctaPrimary: 'Explore Collection',
+    ctaPrimaryLink: '/products',
+    ctaSecondary: 'Talk to a Designer',
+    ctaSecondaryLink: '/contact',
+    videoUrl: '',
+    posterUrl: ''
+};
+
+const resolveAssetUrl = (url) => {
+    if (!url) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${API_URL}${url}`;
+};
 
 const sectionReveal = {
     hidden: { opacity: 0, y: 40 },
@@ -17,6 +35,22 @@ const sectionReveal = {
 };
 
 const VideoShowcase = () => {
+    const [content, setContent] = useState(defaultContent);
+
+    useEffect(() => {
+        fetch(`${API_URL}/api/settings/video`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                if (data && typeof data === 'object') {
+                    setContent((prev) => ({ ...prev, ...data }));
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    const videoSrc = resolveAssetUrl(content.videoUrl) || VIDEO_SRC;
+    const posterSrc = resolveAssetUrl(content.posterUrl) || interiorTwo.src;
+
     return (
         <Flex
             as={motion.section}
@@ -34,30 +68,46 @@ const VideoShowcase = () => {
                     fontWeight={'bold'}
                     fontSize={{ base: '2xl', lg: '3xl' }}
                     textColor={'gray.900'}>
-                    Inside Kejalux Interiors
+                    {content.title}
                 </Text>
                 <Text fontSize={'sm'} textColor={'gray.600'}>
-                    A quick look at our craftsmanship, custom builds, and styling process for homes and businesses.
+                    {content.subtitle}
                 </Text>
                 <HStack>
-                    <Link href={'/products'}>
-                        <Button variant={'solid'}>Explore Collection</Button>
+                    <Link href={content.ctaPrimaryLink || '/products'}>
+                        <Button variant={'solid'}>{content.ctaPrimary}</Button>
                     </Link>
-                    <Link href={'/contact'}>
-                        <Button variant={'outline'}>Talk to a Designer</Button>
+                    <Link href={content.ctaSecondaryLink || '/contact'}>
+                        <Button variant={'outline'}>{content.ctaSecondary}</Button>
                     </Link>
                 </HStack>
             </VStack>
 
             <Box w={'full'}>
                 <AspectRatio ratio={16 / 9} w={'full'}>
-                    <Box
-                        as={'video'}
-                        src={VIDEO_SRC}
-                        controls
-                        poster={interiorTwo.src}
-                        style={{ borderRadius: '18px', width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+                    {videoSrc ? (
+                        <Box
+                            as={'video'}
+                            src={videoSrc}
+                            controls
+                            poster={posterSrc}
+                            style={{ borderRadius: '18px', width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                    ) : (
+                        <Box
+                            borderRadius={'18px'}
+                            bgImage={`url(${posterSrc})`}
+                            bgSize={'cover'}
+                            bgPosition={'center'}
+                            display={'flex'}
+                            alignItems={'center'}
+                            justifyContent={'center'}
+                            color={'white'}
+                            fontWeight={'bold'}
+                            textShadow={'0 4px 12px rgba(0,0,0,0.4)'}>
+                            Add a homepage video in Admin → Homepage Video
+                        </Box>
+                    )}
                 </AspectRatio>
             </Box>
         </Flex>

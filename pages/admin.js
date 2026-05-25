@@ -1,18 +1,20 @@
 import { Box, Button, Divider, Flex, Heading, HStack, Icon, Text, VStack } from "@chakra-ui/react";
 import { useState } from "react";
-import { Package, ShoppingCart, Image as ImageIcon, SignOut, House, PencilSimple } from "phosphor-react";
+import { Package, ShoppingCart, Image as ImageIcon, SignOut, House, PencilSimple, VideoCamera } from "phosphor-react";
 import { useRouter } from "next/router";
 import UploadProduct from "../components/admin/UploadProduct";
 import ViewProducts from "../components/admin/ViewProducts";
 import ViewOrders from "../components/admin/ViewOrders";
 import ManageBanners from "../components/admin/ManageBanners";
 import ManageHero from "../components/admin/ManageHero";
+import ManageVideo from "../components/admin/ManageVideo";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
 import Meta from "../components/meta/Meta";
 
 const navItems = [
     { label: 'Hero Section', icon: PencilSimple, key: 'hero' },
+    { label: 'Homepage Video', icon: VideoCamera, key: 'video' },
     { label: 'Products', icon: Package, key: 'products' },
     { label: 'Add Product', icon: Package, key: 'add-product' },
     { label: 'Orders', icon: ShoppingCart, key: 'orders' },
@@ -96,6 +98,7 @@ const Admin = () => {
                 </HStack>
 
                 {activeTab === 'hero' && <ManageHero />}
+                {activeTab === 'video' && <ManageVideo />}
                 {activeTab === 'products' && <ViewProducts />}
                 {activeTab === 'add-product' && <UploadProduct />}
                 {activeTab === 'orders' && <ViewOrders />}
