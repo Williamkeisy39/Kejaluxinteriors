@@ -25,6 +25,53 @@ const resolveAssetUrl = (url) => {
     return `${API_URL}${url}`;
 };
 
+const getYouTubeId = (parsedUrl) => {
+    if (!parsedUrl) return null;
+    if (parsedUrl.hostname.includes('youtu.be')) {
+        return parsedUrl.pathname.replace('/', '').split('/')[0] || null;
+    }
+    const searchId = parsedUrl.searchParams.get('v');
+    if (searchId) return searchId;
+    const pathMatch = parsedUrl.pathname.match(/\/(embed|shorts)\/([^/?]+)/);
+    return pathMatch ? pathMatch[2] : null;
+};
+
+const getVimeoId = (parsedUrl) => {
+    if (!parsedUrl) return null;
+    const pathMatch = parsedUrl.pathname.match(/\/(\d+)/);
+    return pathMatch ? pathMatch[1] : null;
+};
+
+const getDriveId = (parsedUrl) => {
+    if (!parsedUrl) return null;
+    const pathMatch = parsedUrl.pathname.match(/\/file\/d\/([^/]+)/);
+    if (pathMatch) return pathMatch[1];
+    return parsedUrl.searchParams.get('id');
+};
+
+const getEmbedSrc = (url) => {
+    if (!url || !url.startsWith('http')) return null;
+    try {
+        const parsedUrl = new URL(url);
+        const host = parsedUrl.hostname.toLowerCase();
+        if (host.includes('youtube.com') || host.includes('youtu.be')) {
+            const id = getYouTubeId(parsedUrl);
+            return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+        if (host.includes('vimeo.com')) {
+            const id = getVimeoId(parsedUrl);
+            return id ? `https://player.vimeo.com/video/${id}` : null;
+        }
+        if (host.includes('drive.google.com')) {
+            const id = getDriveId(parsedUrl);
+            return id ? `https://drive.google.com/file/d/${id}/preview` : null;
+        }
+    } catch (err) {
+        return null;
+    }
+    return null;
+};
+
 const sectionReveal = {
     hidden: { opacity: 0, y: 40 },
     visible: {
@@ -48,7 +95,9 @@ const VideoShowcase = () => {
             .catch(() => {});
     }, []);
 
-    const videoSrc = resolveAssetUrl(content.videoUrl) || VIDEO_SRC;
+    const resolvedVideoUrl = resolveAssetUrl(content.videoUrl) || VIDEO_SRC;
+    const embedSrc = getEmbedSrc(resolvedVideoUrl);
+    const videoSrc = embedSrc ? '' : resolvedVideoUrl;
     const posterSrc = resolveAssetUrl(content.posterUrl) || interiorTwo.src;
 
     return (
@@ -85,7 +134,16 @@ const VideoShowcase = () => {
 
             <Box w={'full'}>
                 <AspectRatio ratio={16 / 9} w={'full'}>
-                    {videoSrc ? (
+                    {embedSrc ? (
+                        <Box
+                            as={'iframe'}
+                            src={embedSrc}
+                            title={'Homepage video'}
+                            allow={'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'}
+                            allowFullScreen
+                            style={{ borderRadius: '18px', width: '100%', height: '100%', border: 0 }}
+                        />
+                    ) : videoSrc ? (
                         <Box
                             as={'video'}
                             src={videoSrc}
