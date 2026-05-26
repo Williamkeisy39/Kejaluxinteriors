@@ -102,6 +102,7 @@ const Checkout = ({ addOrder, clearCart }) => {
         reference: (new Date()).getTime().toString(),
         email: email,
         amount: resolvedAmount,
+        currency: 'KES',
         publicKey: paystackKey || '',
     };
     const initializePayment = usePaystackPayment(config);
