@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Flex, HStack, Icon, Text, VStack } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, HStack, Icon, Stack, Text, VStack } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -43,14 +43,16 @@ const FeaturePill = ({ icon, text }) => (
         bg={'whiteAlpha.800'}
         backdropFilter={'blur(8px)'}
         rounded={'full'}
-        px={4}
-        py={2}
+        px={{ base: 3, md: 4 }}
+        py={{ base: 1.5, md: 2 }}
         spacing={2}
         shadow={'sm'}
         border={'1px solid'}
         borderColor={'gray.100'}>
         <Icon as={icon} boxSize={4} color={'gold.500'} weight={'fill'} />
-        <Text fontSize={'xs'} fontWeight={'semibold'} color={'gray.700'}>{text}</Text>
+        <Text fontSize={{ base: 'xs', md: 'sm' }} fontWeight={'semibold'} color={'gray.700'}>
+            {text}
+        </Text>
     </HStack>
 )
 
@@ -153,8 +155,9 @@ const Hero = () => {
                 justifyContent={'flex-start'}>
 
                 <VStack
-                    alignItems={'start'}
+                    alignItems={{ base: 'stretch', md: 'flex-start' }}
                     maxWidth={{ base: '100%', md: '600px', lg: '560px' }}
+                    w={'full'}
                     spacing={6}
                     bg={'whiteAlpha.800'}
                     backdropFilter={'blur(10px)'}
@@ -190,7 +193,7 @@ const Hero = () => {
                         initial={'hidden'}
                         animate={'visible'}
                         fontWeight={'black'}
-                        fontSize={{ base: '4xl', md: '5xl', lg: '6xl' }}
+                        fontSize={{ base: '3xl', sm: '4xl', md: '5xl', lg: '6xl' }}
                         textColor={'gray.900'}
                         lineHeight={'1.1'}
                         letterSpacing={'tight'}>
@@ -217,26 +220,30 @@ const Hero = () => {
                         {content.subtitle}
                     </Text>
 
-                    <HStack
+                    <Stack
                         as={motion.div}
                         variants={fadeUp}
                         custom={3}
                         initial={'hidden'}
                         animate={'visible'}
-                        spacing={4}
-                        flexWrap={'wrap'}>
+                        spacing={3}
+                        direction={{ base: 'column', sm: 'row' }}
+                        align={{ base: 'stretch', sm: 'center' }}
+                        w={'full'}>
                         <Link href={'/products'}>
                             <Button
                                 variant={'solid'}
-                                size={'lg'}
-                                px={10}>
+                                size={{ base: 'md', md: 'lg' }}
+                                px={{ base: 6, md: 10 }}
+                                w={{ base: 'full', sm: 'auto' }}>
                                 {content.ctaPrimary}
                             </Button>
                         </Link>
                         <Link href={'/contact'}>
                             <Button
-                                size={'lg'}
-                                px={10}
+                                size={{ base: 'md', md: 'lg' }}
+                                px={{ base: 6, md: 10 }}
+                                w={{ base: 'full', sm: 'auto' }}
                                 bg={'transparent'}
                                 color={'gray.800'}
                                 border={'2px solid'}
@@ -246,21 +253,21 @@ const Hero = () => {
                                 {content.ctaSecondary}
                             </Button>
                         </Link>
-                    </HStack>
+                    </Stack>
 
-                    <HStack
+                    <Flex
                         as={motion.div}
                         variants={fadeUp}
                         custom={4}
                         initial={'hidden'}
                         animate={'visible'}
-                        spacing={3}
-                        flexWrap={'wrap'}
+                        wrap={'wrap'}
+                        gap={{ base: 2, md: 3 }}
                         mt={2}>
                         {content.features.map((feat, i) => (
                             <FeaturePill key={i} icon={featureIcons[i] || Star} text={feat} />
                         ))}
-                    </HStack>
+                    </Flex>
 
                     <HStack spacing={2} pt={4} opacity={0.8}>
                         {heroImages.map((image, index) => (

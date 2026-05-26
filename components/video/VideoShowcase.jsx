@@ -1,7 +1,7 @@
-import { AspectRatio, Box, Button, Flex, HStack, Text, VStack } from '@chakra-ui/react';
+import { AspectRatio, Box, Button, Flex, Stack, Text, VStack } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import interiorTwo from '../../public/interiorstwo.jpg';
 
@@ -83,6 +83,18 @@ const sectionReveal = {
 
 const VideoShowcase = () => {
     const [content, setContent] = useState(defaultContent);
+    const [shouldAutoplay, setShouldAutoplay] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
+    const sectionRef = useRef(null);
+    const videoRef = useRef(null);
+
+    const resolvedVideoUrl = resolveAssetUrl(content.videoUrl) || VIDEO_SRC;
+    const embedSrc = getEmbedSrc(resolvedVideoUrl);
+    const videoSrc = embedSrc ? '' : resolvedVideoUrl;
+    const iframeSrc = embedSrc
+        ? `${embedSrc}${embedSrc.includes('?') ? '&' : '?'}autoplay=${shouldAutoplay ? 1 : 0}&mute=1&playsinline=1`
+        : '';
+    const posterSrc = resolveAssetUrl(content.posterUrl) || interiorTwo.src;
 
     useEffect(() => {
         fetch(`${API_URL}/api/settings/video`)
@@ -95,14 +107,30 @@ const VideoShowcase = () => {
             .catch(() => {});
     }, []);
 
-    const resolvedVideoUrl = resolveAssetUrl(content.videoUrl) || VIDEO_SRC;
-    const embedSrc = getEmbedSrc(resolvedVideoUrl);
-    const videoSrc = embedSrc ? '' : resolvedVideoUrl;
-    const posterSrc = resolveAssetUrl(content.posterUrl) || interiorTwo.src;
+    useEffect(() => {
+        if (!sectionRef.current || typeof IntersectionObserver === 'undefined') return;
+        const observer = new IntersectionObserver(
+            ([entry]) => setShouldAutoplay(entry.isIntersecting),
+            { threshold: 0.4 }
+        );
+        observer.observe(sectionRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        if (!videoRef.current || !videoSrc) return;
+        if (shouldAutoplay) {
+            const playPromise = videoRef.current.play();
+            if (playPromise?.catch) playPromise.catch(() => {});
+        } else {
+            videoRef.current.pause();
+        }
+    }, [shouldAutoplay, videoSrc]);
 
     return (
         <Flex
             as={motion.section}
+            ref={sectionRef}
             variants={sectionReveal}
             initial={'hidden'}
             whileInView={'visible'}
@@ -112,24 +140,38 @@ const VideoShowcase = () => {
             direction={'column'}
             alignItems={'center'}
             gap={{ base: 6, lg: 8 }}>
-            <VStack alignItems={{ base: 'flex-start', lg: 'center' }} spacing={4} textAlign={{ lg: 'center' }}>
+            <VStack
+                alignItems={{ base: 'flex-start', lg: 'center' }}
+                spacing={4}
+                textAlign={{ base: 'left', lg: 'center' }}
+                w={'full'}
+                maxW={{ base: 'full', lg: '3xl' }}>
                 <Text
                     fontWeight={'bold'}
                     fontSize={{ base: '2xl', lg: '3xl' }}
                     textColor={'gray.900'}>
                     {content.title}
                 </Text>
-                <Text fontSize={'sm'} textColor={'gray.600'}>
+                <Text fontSize={'sm'} textColor={'gray.600'} maxW={{ base: 'full', lg: '2xl' }}>
                     {content.subtitle}
                 </Text>
-                <HStack>
+                <Stack
+                    direction={{ base: 'column', sm: 'row' }}
+                    spacing={3}
+                    w={'full'}
+                    align={{ base: 'stretch', sm: 'center' }}
+                    justify={{ base: 'flex-start', lg: 'center' }}>
                     <Link href={content.ctaPrimaryLink || '/products'}>
-                        <Button variant={'solid'}>{content.ctaPrimary}</Button>
+                        <Button variant={'solid'} w={{ base: 'full', sm: 'auto' }}>
+                            {content.ctaPrimary}
+                        </Button>
                     </Link>
                     <Link href={content.ctaSecondaryLink || '/contact'}>
-                        <Button variant={'outline'}>{content.ctaSecondary}</Button>
+                        <Button variant={'outline'} w={{ base: 'full', sm: 'auto' }}>
+                            {content.ctaSecondary}
+                        </Button>
                     </Link>
-                </HStack>
+                </Stack>
             </VStack>
 
             <Box w={'full'}>
@@ -137,7 +179,7 @@ const VideoShowcase = () => {
                     {embedSrc ? (
                         <Box
                             as={'iframe'}
-                            src={embedSrc}
+                            src={iframeSrc}
                             title={'Homepage video'}
                             allow={'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'}
                             allowFullScreen
@@ -147,8 +189,15 @@ const VideoShowcase = () => {
                         <Box
                             as={'video'}
                             src={videoSrc}
+                            ref={videoRef}
                             controls
+                            muted={isMuted}
+                            playsInline
+                            autoPlay={shouldAutoplay}
                             poster={posterSrc}
+                            onVolumeChange={() => {
+                                if (videoRef.current) setIsMuted(videoRef.current.muted);
+                            }}
                             style={{ borderRadius: '18px', width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                     ) : (

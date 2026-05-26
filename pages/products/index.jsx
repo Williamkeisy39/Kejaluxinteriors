@@ -22,13 +22,13 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
-    InputRightElement,
     Radio,
     RadioGroup,
     RangeSlider,
     RangeSliderFilledTrack,
     RangeSliderThumb,
     RangeSliderTrack,
+    Select,
     Skeleton,
     Stack,
     Text,
@@ -36,7 +36,7 @@ import {
     VStack,
 } from '@chakra-ui/react';
 import { MagnifyingGlass, CaretRight, FunnelSimple, X } from 'phosphor-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { connect, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { ToastContainer } from 'react-toastify';
@@ -254,6 +254,7 @@ const AllProducts = ({ getAllProducts, getProductsByColor, getProductsByPrice })
     const [searchResults, setSearchResults] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState(null);
+    const [sortOption, setSortOption] = useState('');
 
     const { isFetching, isLoaded, error, data, page, endOfData }
         = useSelector((state) => state.products);
@@ -298,8 +299,31 @@ const AllProducts = ({ getAllProducts, getProductsByColor, getProductsByPrice })
 
     const displayProducts = searchResults !== null
         ? searchResults
-        : Object.values(safeData);
+        : Object.values(safeData || {});
     const isSearchMode = searchResults !== null;
+
+    const normalizePrice = (value) => {
+        if (typeof value === 'number') return value;
+        if (!value) return 0;
+        const normalized = Number(String(value).replace(/[^0-9.]/g, ''));
+        return Number.isNaN(normalized) ? 0 : normalized;
+    };
+
+    const sortedProducts = useMemo(() => {
+        const items = [...displayProducts];
+        switch (sortOption) {
+            case 'price-low':
+                return items.sort((a, b) => normalizePrice(a.productPrice) - normalizePrice(b.productPrice));
+            case 'price-high':
+                return items.sort((a, b) => normalizePrice(b.productPrice) - normalizePrice(a.productPrice));
+            case 'name-asc':
+                return items.sort((a, b) => (a.productName || '').localeCompare(b.productName || ''));
+            case 'name-desc':
+                return items.sort((a, b) => (b.productName || '').localeCompare(a.productName || ''));
+            default:
+                return items;
+        }
+    }, [displayProducts, sortOption]);
 
     if (error) {
         return (
@@ -357,10 +381,12 @@ const AllProducts = ({ getAllProducts, getProductsByColor, getProductsByPrice })
                     </Breadcrumb>
                 </HStack>
 
-                <Flex
+                <Stack
+                    direction={{ base: 'column', md: 'row' }}
                     w={{ base: 'full', md: 'auto' }}
-                    maxW={{ base: 'full', md: '420px' }}
-                    alignItems={'center'}>
+                    maxW={{ base: 'full', md: '520px' }}
+                    alignItems={{ base: 'stretch', md: 'center' }}
+                    spacing={3}>
                     <InputGroup w={'full'}>
                         <InputLeftElement>
                             <MagnifyingGlass size={18} weight={'regular'} />
@@ -370,7 +396,7 @@ const AllProducts = ({ getAllProducts, getProductsByColor, getProductsByPrice })
                             fontSize={'sm'}
                             focusBorderColor={'gold.500'}
                             variant={'filled'}
-                            pr={{ base: '7.5rem', md: '8.5rem' }}
+                            pr={10}
                             value={searchTerm}
                             onChange={(e) => {
                                 const nextValue = e.target.value;
@@ -383,30 +409,31 @@ const AllProducts = ({ getAllProducts, getProductsByColor, getProductsByPrice })
                                 if (e.key === 'Enter') handleSearch();
                             }}
                         />
-                        <InputRightElement width={'auto'} pr={1} pointerEvents={'auto'}>
-                            <HStack spacing={1}>
-                                {searchTerm && (
-                                    <IconButton
-                                        size={'xs'}
-                                        variant={'ghost'}
-                                        aria-label={'Clear search'}
-                                        icon={<X size={14} />}
-                                        onClick={clearSearch}
-                                    />
-                                )}
-                                <Button
-                                    size={'sm'}
-                                    onClick={handleSearch}
-                                    isLoading={isSearching}
-                                    bg={'gold.500'}
-                                    color={'white'}
-                                    _hover={{ bg: 'gold.600' }}>
-                                    Search
-                                </Button>
-                            </HStack>
-                        </InputRightElement>
+                        {searchTerm && (
+                            <Box position={'absolute'} right={2} top={'50%'} transform={'translateY(-50%)'}>
+                                <IconButton
+                                    size={'xs'}
+                                    variant={'ghost'}
+                                    aria-label={'Clear search'}
+                                    icon={<X size={14} />}
+                                    onClick={clearSearch}
+                                />
+                            </Box>
+                        )}
                     </InputGroup>
-                </Flex>
+                    <Select
+                        value={sortOption}
+                        onChange={(e) => setSortOption(e.target.value)}
+                        size={'sm'}
+                        maxW={{ base: 'full', md: '200px' }}
+                        bg={'white'}>
+                        <option value=''>Sort by</option>
+                        <option value='price-low'>Price: Low to High</option>
+                        <option value='price-high'>Price: High to Low</option>
+                        <option value='name-asc'>Name: A - Z</option>
+                        <option value='name-desc'>Name: Z - A</option>
+                    </Select>
+                </Stack>
             </Flex>
 
             <Flex
@@ -431,7 +458,7 @@ const AllProducts = ({ getAllProducts, getProductsByColor, getProductsByPrice })
                 </Text>
                 {isSearchMode && (
                     <Text fontSize={'sm'} color={'gray.600'} mt={2}>
-                        {isSearching ? 'Searching products...' : `Showing ${displayProducts.length} results`}
+                        {isSearching ? 'Searching products...' : `Showing ${sortedProducts.length} results`}
                     </Text>
                 )}
                 {searchError && (
@@ -545,7 +572,7 @@ const AllProducts = ({ getAllProducts, getProductsByColor, getProductsByPrice })
                                 }
                             }}>
                             {
-                                displayProducts.map(product => (
+                                sortedProducts.map(product => (
                                     <ProductItem
                                         key={product.pid}
                                         productId={product.pid}
